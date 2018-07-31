@@ -55,9 +55,38 @@ func (t *Terminal) Process() {
 			fmt.Println("end err", end_buf)
 			return
 		}
+		t.Parse2Message(data[:dataLen-1])
 
 		pingResponse := PackPing()
 		t.Conn.Write(pingResponse)
 
 	}
+}
+
+
+func (t *Terminal) Parse2Message(data []byte){
+	l := len(data)
+	if l < 23{ // eventData 至少一字节
+		return
+	}
+	validEventLength := l - 22
+	fmt.Println(l)
+	version := data[0]
+	sequence := Bytes4ToInt(data[1:5])
+	fmt.Println(sequence, data[1:5])
+	event := data[5]
+	terminalId := Bytes4ToInt(data[6:10])
+	createtime := Bytes4ToInt(data[10:14])
+	eventLength := Bytes4ToInt(data[14:18])
+	if validEventLength != int(eventLength){
+		fmt.Println("err valid event length", validEventLength, eventLength)
+	}
+	eventData := data[18:18+eventLength]
+	packageHash := Bytes4ToInt(data[l-4:])
+
+	fmt.Println(version, sequence, event, terminalId, createtime, eventLength, eventData, packageHash)
+
+
+
+
 }
