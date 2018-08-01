@@ -18,6 +18,7 @@ type Terminal struct {
 	writeTimeout time.Duration
 	readTimeout  time.Duration
 	TerminalId   int64
+	inbox   chan []byte
 }
 
 func (t *Terminal) Process() {
@@ -55,16 +56,21 @@ func (t *Terminal) Process() {
 			fmt.Println("end err", end_buf)
 			return
 		}
-		t.Parse2Message(data[:dataLen-1])
+		t.Parse2Message(data[:dataLen-1], packageLen)
 
 		pingResponse := PackPing()
-		t.Conn.Write(pingResponse)
+		t.inbox <- pingResponse
+		//_, err = t.bw.Write(pingResponse)
+		//if err != nil{
+		//	fmt.Println(err)
+		//}
+		//t.bw.Flush()
 
 	}
 }
 
 
-func (t *Terminal) Parse2Message(data []byte){
+func (t *Terminal) Parse2Message(data []byte, packageLength int32){
 	l := len(data)
 	if l < 23{ // eventData 至少一字节
 		return
@@ -76,7 +82,7 @@ func (t *Terminal) Parse2Message(data []byte){
 	fmt.Println(sequence, data[1:5])
 	event := data[5]
 	terminalId := Bytes4ToInt(data[6:10])
-	createtime := Bytes4ToInt(data[10:14])
+	createTime := Bytes4ToInt(data[10:14])
 	eventLength := Bytes4ToInt(data[14:18])
 	if validEventLength != int(eventLength){
 		fmt.Println("err valid event length", validEventLength, eventLength)
@@ -84,9 +90,49 @@ func (t *Terminal) Parse2Message(data []byte){
 	eventData := data[18:18+eventLength]
 	packageHash := Bytes4ToInt(data[l-4:])
 
-	fmt.Println(version, sequence, event, terminalId, createtime, eventLength, eventData, packageHash)
+	expectHash := shifting(int32(packageLength) + sequence + terminalId + createTime + int32(eventLength))
+	if expectHash != packageHash{
+		fmt.Println("hash valid failed", expectHash, packageHash)
+	}
+
+	fmt.Println(version, sequence, event, terminalId, createTime, eventLength, eventData, packageHash)
 
 
 
 
+}
+
+func (t *Terminal) Close(){
+	err := t.Conn.Close()
+	if err != nil{
+		fmt.Println("close conn err", err)
+	}
+}
+
+func (t *Terminal) write_loop() {
+	defer t.Close()
+	for {
+		select {
+		case b := <-t.inbox:
+			if b == nil {
+				continue
+			}
+			t.Conn.SetWriteDeadline(time.Now().Add(t.writeTimeout))
+			_, err := t.bw.Write(b)
+			if err != nil{
+				fmt.Println("write err", err)
+				return
+			}
+			fmt.Println("server write finish", b)
+			t.bw.Flush()
+		case <-time.After(5 * time.Second):
+		//超时60秒,没有任何心跳信息 关掉
+			fmt.Println("timeout close")
+			return
+		}
+
+
+
+
+	}
 }

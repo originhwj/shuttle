@@ -30,6 +30,11 @@ func Bytes4ToInt(b []byte) int32 {
 	return x
 }
 
+func shifting(a int32) int32 {
+	a = a << 3
+	return a
+}
+
 type Message struct {
 	PackageLength int32
 	Version       []byte
@@ -56,7 +61,7 @@ func (m *Message) Pack() []byte {
 	ret = append(ret, intToBytes4(m.CreateTime)...)
 	ret = append(ret, intToBytes4(m.EventLength)...)
 	ret = append(ret, m.EventData...)
-	ret = append(ret, intToBytes4(m.PackageHash)...)
+	ret = append(ret, intToBytes4(shifting(m.PackageHash))...)
 	ret = append(ret, end...)
 
 	return ret
