@@ -39,6 +39,7 @@ type Message struct {
 	PackageLength int32
 	Version       []byte
 	Sequence      int32
+	Direction     byte
 	Event         []byte
 	TerminalId    int32
 	CreateTime    int32
@@ -56,6 +57,7 @@ func (m *Message) Pack() []byte {
 	ret = append(ret, intToBytes4(m.PackageLength)...)
 	ret = append(ret, m.Version...)
 	ret = append(ret, intToBytes4(m.Sequence)...)
+	ret = append(ret, m.Direction)
 	ret = append(ret, m.Event...)
 	ret = append(ret, intToBytes4(m.TerminalId)...)
 	ret = append(ret, intToBytes4(m.CreateTime)...)

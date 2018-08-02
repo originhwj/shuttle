@@ -29,13 +29,14 @@ func PackPing() []byte {
 	createTime := int32(time.Now().Unix())
 	eventData := []byte{0}
 	eventLength := len(eventData)
-	packageLength := 26 + eventLength
+	packageLength := 27 + eventLength
 	packageHash := int32(packageLength) + sequence + terminalId + createTime + int32(eventLength)
 
 	m := &Message{
-		PackageLength: int32(26 + eventLength),
+		PackageLength: int32(packageLength),
 		Version:       version,
 		Sequence:      sequence,
+		Direction:     1,
 		Event:         event,
 		TerminalId:    terminalId,
 		CreateTime:    createTime,

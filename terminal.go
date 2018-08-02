@@ -72,22 +72,23 @@ func (t *Terminal) Process() {
 
 func (t *Terminal) Parse2Message(data []byte, packageLength int32){
 	l := len(data)
-	if l < 23{ // eventData 至少一字节
+	if l < 24{ // eventData 至少一字节
 		return
 	}
-	validEventLength := l - 22
+	validEventLength := l - 23
 	fmt.Println(l)
 	version := data[0]
 	sequence := Bytes4ToInt(data[1:5])
 	fmt.Println(sequence, data[1:5])
-	event := data[5]
-	terminalId := Bytes4ToInt(data[6:10])
-	createTime := Bytes4ToInt(data[10:14])
-	eventLength := Bytes4ToInt(data[14:18])
+	direction := data[5]
+	event := data[6]
+	terminalId := Bytes4ToInt(data[7:11])
+	createTime := Bytes4ToInt(data[11:15])
+	eventLength := Bytes4ToInt(data[15:19])
 	if validEventLength != int(eventLength){
 		fmt.Println("err valid event length", validEventLength, eventLength)
 	}
-	eventData := data[18:18+eventLength]
+	eventData := data[19:19+eventLength]
 	packageHash := Bytes4ToInt(data[l-4:])
 
 	expectHash := shifting(int32(packageLength) + sequence + terminalId + createTime + int32(eventLength))
@@ -95,7 +96,7 @@ func (t *Terminal) Parse2Message(data []byte, packageLength int32){
 		fmt.Println("hash valid failed", expectHash, packageHash)
 	}
 
-	fmt.Println(version, sequence, event, terminalId, createTime, eventLength, eventData, packageHash)
+	fmt.Println(version, sequence, direction, event, terminalId, createTime, eventLength, eventData, packageHash)
 
 
 
