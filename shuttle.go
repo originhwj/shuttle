@@ -125,6 +125,6 @@ func main() {
 
 	//ret := PackPing()
 	//fmt.Println(ret)
-	go Dial()
+	//go Dial()
 	tcp_server()
 }
