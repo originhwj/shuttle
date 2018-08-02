@@ -13,8 +13,8 @@ var (
 	EndByte   = []byte{0x03}
 	Ping      = []byte{1}
 
-	//Host = "47.96.226.207:8888"
-	Host = ":8888"
+	Host = "47.96.226.207:8888"
+	//Host = ":8888"
 
 	INBOX_LEN = 500
 )
@@ -126,5 +126,6 @@ func main() {
 	//ret := PackPing()
 	//fmt.Println(ret)
 	//go Dial()
-	tcp_server()
+	//tcp_server()
+	Dial()
 }

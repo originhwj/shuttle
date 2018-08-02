@@ -1,8 +1,21 @@
 package main
 
 import (
+	"math"
 	"bytes"
 	"encoding/binary"
+	"fmt"
+)
+
+var(
+	Success = []byte{0x00, 0x00}
+	Fail1 = []byte{0x00, 0x01}
+	Fail2 = []byte{0x00, 0x02}
+	Fail3 = []byte{0x00, 0x04}
+	Fail4 = []byte{0x00, 0x08}
+	Fail5 = []byte{0x00, 0x10}
+
+
 )
 
 func intToBytes4(m int32) []byte {
@@ -28,6 +41,19 @@ func Bytes4ToInt(b []byte) int32 {
 	binary.Read(bytesBuffer, binary.BigEndian, &x)
 
 	return x
+}
+
+
+func Float64ToByte(float float64) []byte {
+	bits := math.Float64bits(float)
+	bytes := make([]byte, 8)
+	binary.BigEndian.PutUint64(bytes, bits)
+	return bytes
+}
+
+func ByteToFloat64(bytes []byte) float64 {
+	bits := binary.BigEndian.Uint64(bytes)
+	return math.Float64frombits(bits)
 }
 
 func shifting(a int32) int32 {
@@ -68,3 +94,39 @@ func (m *Message) Pack() []byte {
 
 	return ret
 }
+
+
+func ParseEventData(event byte, eventData []byte){
+	switch event {
+	case 1:
+		err_code := eventData[:2]
+		longitude := ByteToFloat64(eventData[2:10])
+		latitude := ByteToFloat64(eventData[10:18])
+		electric := eventData[18]
+		slot_count := eventData[19]
+		slot_detail := eventData[20:]
+		fmt.Println("parse ping", err_code, longitude, latitude, electric, slot_count, slot_detail)
+	default:
+		fmt.Println("not exist event", event)
+	}
+}
+
+func testPackEventData(){
+	ret := make([]byte, 0, 1024)
+	err_code := Success
+
+	ret = append(ret, err_code...)
+	ret = append(ret, Float64ToByte(23.45678)...)
+	ret = append(ret, Float64ToByte(12.12345)...)
+	ret = append(ret, byte(1))
+	ret = append(ret, byte(2))
+	for i:=1;i<=2;i++{
+		ret = append(ret, byte(i))
+		ret = append(ret, intToBytes4(int32(i))...)
+	}
+	fmt.Println(len(ret), ret)
+
+	ParseEventData(1, ret)
+
+}
+
