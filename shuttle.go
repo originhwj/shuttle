@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"io"
 	"net"
 	"time"
 )
@@ -13,39 +12,14 @@ var (
 	EndByte   = []byte{0x03}
 	Ping      = []byte{1}
 
-	Host = "47.96.226.207:8888"
-	//Host = ":8888"
+	//Host = "47.96.226.207:8888"
+	Host = ":8888"
 
 	INBOX_LEN = 500
 )
 
 
-func PackPing() []byte {
-	var sequence, terminalId int32
-	version := []byte{1}
-	sequence = 123456789
-	event := []byte{1}
-	terminalId = 1
-	createTime := int32(time.Now().Unix())
-	eventData := []byte{0}
-	eventLength := len(eventData)
-	packageLength := 27 + eventLength
-	packageHash := int32(packageLength) + sequence + terminalId + createTime + int32(eventLength)
 
-	m := &Message{
-		PackageLength: int32(packageLength),
-		Version:       version,
-		Sequence:      sequence,
-		Direction:     1,
-		Event:         event,
-		TerminalId:    terminalId,
-		CreateTime:    createTime,
-		EventData:     eventData,
-		EventLength:   int32(eventLength),
-		PackageHash:   packageHash,
-	}
-	return m.Pack()
-}
 
 func tcp_server() {
 	var err error
@@ -71,61 +45,11 @@ func tcp_server() {
 
 		go terminal.Process()
 		go terminal.write_loop()
-		//process(conn)
 	}
 }
 
-func process(conn net.Conn) {
-	for {
-		data := make([]byte, 128)
-		//读取数据
-		res, err := conn.Read(data)
-		if err != nil && err != io.EOF {
-			fmt.Println(err)
-			return
-		} else if err == io.EOF {
-			fmt.Println("EOF conn")
-			return
-		}
-		str := string(data[:res])
-		fmt.Println(str)
-
-		pingResponse := PackPing()
-		conn.Write(pingResponse)
-
-	}
-}
-
-func Dial() {
-	conn, err := net.Dial("tcp", Host)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	for {
-		time.Sleep(2 * time.Second)
-		pingResponse := PackPing()
-		conn.Write(pingResponse)
-		//conn.Write([]byte("hello"))
-		data := make([]byte, 128)
-		res, err := conn.Read(data)
-		if err != nil && err != io.EOF {
-			fmt.Println(err)
-			return
-		} else if err == io.EOF {
-			fmt.Println("EOF conn")
-			return
-		}
-		fmt.Println("response:", data[:res])
-	}
-
-}
 
 func main() {
 
-	//ret := PackPing()
-	//fmt.Println(ret)
-	//go Dial()
-	//tcp_server()
-	Dial()
+	tcp_server()
 }

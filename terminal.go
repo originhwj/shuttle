@@ -7,6 +7,8 @@ import (
 	"net"
 	"sync"
 	"time"
+
+	"./utils/message"
 )
 
 type Terminal struct {
@@ -32,7 +34,7 @@ func (t *Terminal) Process() {
 			return
 		}
 		start := buf[:1]
-		packageLen := Bytes4ToInt(buf[1:5])
+		packageLen := message.Bytes4ToInt(buf[1:5])
 		fmt.Println(start, packageLen)
 		if start[0] != StartByte[0] {
 			fmt.Println("start err", start)
@@ -56,51 +58,13 @@ func (t *Terminal) Process() {
 			fmt.Println("end err", end_buf)
 			return
 		}
-		t.Parse2Message(data[:dataLen-1], packageLen)
+		if resMsg, errCode := message.Parse2Message(data[:dataLen-1], packageLen); errCode== 0{
+			//pingResponse := message.PackPing()
+			t.inbox <- resMsg.Pack()
+		}
 
-		pingResponse := PackPing()
-		t.inbox <- pingResponse
-		//_, err = t.bw.Write(pingResponse)
-		//if err != nil{
-		//	fmt.Println(err)
-		//}
-		//t.bw.Flush()
 
 	}
-}
-
-
-func (t *Terminal) Parse2Message(data []byte, packageLength int32){
-	l := len(data)
-	if l < 24{ // eventData 至少一字节
-		return
-	}
-	validEventLength := l - 23
-	fmt.Println(l)
-	version := data[0]
-	sequence := Bytes4ToInt(data[1:5])
-	fmt.Println(sequence, data[1:5])
-	direction := data[5]
-	event := data[6]
-	terminalId := Bytes4ToInt(data[7:11])
-	createTime := Bytes4ToInt(data[11:15])
-	eventLength := Bytes4ToInt(data[15:19])
-	if validEventLength != int(eventLength){
-		fmt.Println("err valid event length", validEventLength, eventLength)
-	}
-	eventData := data[19:19+eventLength]
-	packageHash := Bytes4ToInt(data[l-4:])
-
-	expectHash := shifting(int32(packageLength) + sequence + terminalId + createTime + int32(eventLength))
-	if expectHash != packageHash{
-		fmt.Println("hash valid failed", expectHash, packageHash)
-	}
-
-	fmt.Println(version, sequence, direction, event, terminalId, createTime, eventLength, eventData, packageHash)
-
-
-
-
 }
 
 func (t *Terminal) Close(){
