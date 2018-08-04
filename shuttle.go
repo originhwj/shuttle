@@ -10,16 +10,10 @@ import (
 var (
 	StartByte = []byte{0x02}
 	EndByte   = []byte{0x03}
-	Ping      = []byte{1}
 
-	//Host = "47.96.226.207:8888"
-	Host = ":8888"
-
+	Host      = ":8888"
 	INBOX_LEN = 500
 )
-
-
-
 
 func tcp_server() {
 	var err error
@@ -40,14 +34,13 @@ func tcp_server() {
 			br:           bufio.NewReader(conn),
 			readTimeout:  10 * time.Second,
 			writeTimeout: 10 * time.Second,
-			inbox:     make(chan []byte, INBOX_LEN),
+			inbox:        make(chan []byte, INBOX_LEN),
 		}
 
 		go terminal.Process()
 		go terminal.write_loop()
 	}
 }
-
 
 func main() {
 
