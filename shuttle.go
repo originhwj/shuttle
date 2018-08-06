@@ -1,10 +1,14 @@
 package main
 
 import (
+	logger "./utils/log"
 	"bufio"
 	"fmt"
 	"net"
 	"time"
+	"flag"
+	"os"
+	"syscall"
 )
 
 var (
@@ -13,7 +17,23 @@ var (
 
 	Host      = ":8888"
 	INBOX_LEN = 500
+	env       *string
+	logPath   *string
+	log       *logger.Logger
 )
+
+func init_log(log_path string) {
+	filename := log_path + ".log"
+	file, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		logger.Println("fail to create log file! err:", err)
+		return
+	}
+	log = logger.New(file, "", logger.Ldate|logger.Ltime|logger.Lmicroseconds|logger.Lshortfile, logger.FWARN)
+	syscall.Dup2(int(file.Fd()), 1)
+	syscall.Dup2(int(file.Fd()), 2)
+	logger.SetLogger(log)
+}
 
 func tcp_server() {
 	var err error
@@ -44,5 +64,9 @@ func tcp_server() {
 
 func main() {
 
+	env = flag.String("env", "test", "dev environment")
+	logPath = flag.String("logPath", "./shuttle", "log path")
+	flag.Parse()
+	init_log(*logPath) //初始化日志
 	tcp_server()
 }
