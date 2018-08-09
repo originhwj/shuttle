@@ -33,32 +33,32 @@ func (t *Terminal) Process() {
 		buf := make([]byte, 5)
 		_, err := t.Conn.Read(buf)
 		if err != nil {
-			fmt.Println(err)
+			log.Error(err)
 			return
 		}
 		start := buf[:1]
 		packageLen := message.Bytes4ToInt(buf[1:5])
 		fmt.Println(start, packageLen)
 		if start[0] != StartByte[0] {
-			fmt.Println("start err", start)
+			log.Error("start err", start)
 			return
 		}
-		fmt.Println("read package len", packageLen)
+		log.Info("read package len", packageLen)
 		dataLen := packageLen - 4 + 1
 		data_buf := make([]byte, dataLen)
 		n, err := io.ReadFull(t.br, data_buf) // 把消息包读完
 		//n, err :=t.Conn.Read(data_buf)
 		if err != nil || n != int(dataLen) {
-			fmt.Println("read err", err, n, dataLen)
+			log.Error("read err", err, n, dataLen)
 			return
 		}
 		data := data_buf[:dataLen]
 
-		fmt.Println("read package data", data)
+		log.Info("read package data", data)
 		end_buf := data[dataLen-1:]
 		fmt.Println("end buff", end_buf)
 		if end_buf[0] != EndByte[0] {
-			fmt.Println("end err", end_buf)
+			log.Error("end err", end_buf)
 			return
 		}
 		if resMsg, errCode := message.Parse2Message(data[:dataLen-1], packageLen); errCode == 0 && resMsg != nil {
@@ -71,10 +71,10 @@ func (t *Terminal) Process() {
 
 func (t *Terminal) Close() {
 	t.once.Do(func() {
-		fmt.Println("terminal close", t)
+		log.Info("terminal close", t)
 		err := t.Conn.Close()
 		if err != nil {
-			fmt.Println("close conn err", err)
+			log.Error("close conn err", err)
 		}
 		t.closed = true
 	})
@@ -92,14 +92,14 @@ func (t *Terminal) write_loop() {
 			t.Conn.SetWriteDeadline(time.Now().Add(t.writeTimeout))
 			_, err := t.bw.Write(b)
 			if err != nil {
-				fmt.Println("write err", err)
+				log.Error("write err", err)
 				return
 			}
-			fmt.Println("server write finish", b)
+			log.Info("server write finish", b)
 			t.bw.Flush()
 		case <-time.After(5 * time.Second):
 			//超时60秒,没有任何心跳信息 关掉
-			fmt.Println("timeout close")
+			log.Warn("timeout close")
 			return
 		}
 
@@ -115,7 +115,7 @@ func (t *Terminal) SendOutStockMessage() {
 		TerminalId: 1,
 	}
 	t.inbox <- m.Pack()
-	fmt.Println("SendOutStockMessage")
+	log.Info("SendOutStockMessage")
 }
 
 func (t *Terminal) SendInStockMessage() {
@@ -127,7 +127,7 @@ func (t *Terminal) SendInStockMessage() {
 		TerminalId: 1,
 	}
 	t.inbox <- m.Pack()
-	fmt.Println("SendInStockMessage")
+	log.Info("SendInStockMessage")
 }
 
 func (t *Terminal) crontabSendStockMessage() {

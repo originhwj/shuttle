@@ -14,7 +14,7 @@ var (
 	EndByte   = []byte{0x03}
 	Ping      = []byte{1}
 
-	Host = ":8888"
+	Host = "svr.train-wifi.com:8888"
 
 	INBOX_LEN = 500
 )
@@ -99,7 +99,7 @@ func Dial() {
 	go func() {
 		for {
 			time.Sleep(2 * time.Second)
-			pingResponse := PackOutStockConfirm()
+			pingResponse := PackPing()
 			_, err := conn.Write(pingResponse)
 			if err != nil && err != io.EOF {
 				fmt.Println(err)

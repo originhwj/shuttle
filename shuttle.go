@@ -3,7 +3,6 @@ package main
 import (
 	logger "./utils/log"
 	"bufio"
-	"fmt"
 	"net"
 	"time"
 	"flag"
@@ -61,13 +60,13 @@ func tcp_server() {
 	var err error
 	listener, err := net.Listen("tcp", ":8888")
 	if err != nil {
-		fmt.Println("listen err", err)
+		log.Error("listen err", err)
 		return
 	}
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
-			fmt.Println("accept err", err)
+			log.Error("accept err", err)
 			return
 		}
 		terminal := Terminal{
@@ -92,7 +91,7 @@ func time_sub(t time.Time) int64 {
 func GetPostData(r *http.Request) ([]byte, error) {
 	post_data, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		log.Println("read post data error")
+		log.Error("read post data error")
 		return nil, errors.New("read post data error")
 	}
 	return post_data, nil

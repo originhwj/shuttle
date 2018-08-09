@@ -3,9 +3,9 @@ package message
 import (
 	"bytes"
 	"encoding/binary"
-	"fmt"
 	"math"
 	"time"
+	"../log"
 )
 
 var (
@@ -113,7 +113,7 @@ func ParseEventData(event, direction byte, eventData []byte, m *Message) {
 	case Ping:
 		m.EventData = []byte{1}
 		if len(eventData) < 20 {
-			fmt.Println("ping eventdata size not enough", len(eventData))
+			log.Error("ping eventdata size not enough", len(eventData))
 			return
 		}
 		err_code := eventData[:2]
@@ -125,62 +125,62 @@ func ParseEventData(event, direction byte, eventData []byte, m *Message) {
 		if int(slot_count) > 0 && len(eventData) > 20 {
 			slot_detail = eventData[20:]
 			if len(slot_detail)/5 != int(slot_count) {
-				fmt.Println("slot count not equal")
+				log.Warn("slot count not equal")
 			}
 		}
-		fmt.Println("parse ping", err_code, longitude, latitude, electric, slot_count, slot_detail)
+		log.Info("parse ping", err_code, longitude, latitude, electric, slot_count, slot_detail)
 		m.EventData = []byte{0}
 	case OutStock:
 		if len(eventData) != 1 {
-			fmt.Println("wrong size event data", eventData)
+			log.Error("wrong size event data", eventData)
 			return
 		}
 		errCode := eventData[0]
 		if errCode != 0 {
-			fmt.Println("wrong errCode", errCode)
+			log.Error("wrong errCode", errCode)
 		}
-		fmt.Println("outstock success")
+		log.Info("outstock success")
 	case InStock:
 		if len(eventData) != 1 {
-			fmt.Println("wrong size event data", eventData)
+			log.Error("wrong size event data", eventData)
 			return
 		}
 		errCode := eventData[0]
 		if errCode != 0 {
-			fmt.Println("wrong errCode", errCode)
+			log.Error("wrong errCode", errCode)
 		}
-		fmt.Println("instock success")
+		log.Info("instock success")
 	case OutStockConfirm:
 		m.EventData = []byte{1}
 		if len(eventData) != 6 {
-			fmt.Println("OutStockconfirm size not equal", len(eventData))
+			log.Error("OutStockconfirm size not equal", len(eventData))
 			return
 		}
 		soltId := eventData[0]
 		deviceId := Bytes4ToInt(eventData[1:5])
 		result := eventData[5]
-		fmt.Println("outstock confirm success", soltId, deviceId, result)
+		log.Info("outstock confirm success", soltId, deviceId, result)
 		m.EventData = []byte{0}
 	case InStockConfirm:
 		m.EventData = []byte{1}
 		if len(eventData) != 6 {
-			fmt.Println("InStockconfirm size not equal", len(eventData))
+			log.Error("InStockconfirm size not equal", len(eventData))
 			return
 		}
 		soltId := eventData[0]
 		deviceId := eventData[1:5]
 		result := eventData[5]
-		fmt.Println("instock confirm success", soltId, deviceId, result)
+		log.Info("instock confirm success", soltId, deviceId, result)
 		m.EventData = []byte{0}
 	default:
-		fmt.Println("not exist event", event)
+		log.Info("not exist event", event)
 	}
 }
 
 func Parse2Message(data []byte, packageLength int32) (*Message, int) {
 	l := len(data)
 	if l < 24 { // eventData 至少一字节
-		fmt.Println("package size not long enough")
+		log.Error("package size not long enough")
 		return nil, -1
 	}
 	validEventLength := l - 23
@@ -194,7 +194,7 @@ func Parse2Message(data []byte, packageLength int32) (*Message, int) {
 	createTime := Bytes4ToInt(data[11:15])
 	eventLength := Bytes4ToInt(data[15:19])
 	if validEventLength != int(eventLength) {
-		fmt.Println("err valid event length", validEventLength, eventLength)
+		log.Error("err valid event length", validEventLength, eventLength)
 		return nil, -2
 	}
 	eventData := data[19 : 19+eventLength]
@@ -202,11 +202,11 @@ func Parse2Message(data []byte, packageLength int32) (*Message, int) {
 
 	expectHash := shifting(int32(packageLength) + sequence + terminalId + createTime + int32(eventLength))
 	if expectHash != packageHash {
-		fmt.Println("hash valid failed", expectHash, packageHash)
+		log.Error("hash valid failed", expectHash, packageHash)
 		return nil, -3
 	}
 
-	fmt.Println(version, sequence, direction, event, terminalId, createTime, eventLength, eventData, packageHash)
+	log.Info(version, sequence, direction, event, terminalId, createTime, eventLength, eventData, packageHash)
 	m := &Message{
 		Version:    version,
 		Sequence:   sequence,
