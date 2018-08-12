@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"../utils/message"
+	"../utils/sqlutils"
 )
 
 var (
@@ -128,6 +129,32 @@ func Dial() {
 
 }
 
+func testInsert(){
+	sqlutils.SetConfig("master")
+	var sequence, terminalId int32
+	sequence = int32(time.Now().Unix())
+	terminalId = 1
+	createTime := int32(time.Now().Unix())
+	eventData := PackOutStockConfirmEventData()
+	eventDetail := &message.EventDetail{
+		SlotId: 1,
+		DeviceId: 1,
+		Result: 0,
+	}
+	m := &message.Message{
+		Version:    1,
+		Sequence:   sequence,
+		Direction:  1,
+		Event:      message.OutStockConfirm,
+		TerminalId: terminalId,
+		CreateTime: createTime,
+		EventData:  eventData,
+	}
+	res := m.Pack()
+	m.InsertMessage(eventDetail, res)
+
+}
+
 func main() {
-	Dial()
+	testInsert()
 }

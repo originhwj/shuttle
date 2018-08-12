@@ -6,6 +6,8 @@ import (
 	"math"
 	"time"
 	"../log"
+	"../sqlutils"
+	"fmt"
 )
 
 var (
@@ -25,6 +27,9 @@ const (
 	InStock         = 3
 	OutStockConfirm = 4
 	InStockConfirm  = 5
+
+	DefDateLayout     = "2006-01-02"
+	DefDatetimeLayout = "2006-01-02 15:04:05"
 )
 
 func IntToBytes4(m int32) []byte {
@@ -80,6 +85,13 @@ type Message struct {
 	EventLength   int32
 	EventData     []byte
 	PackageHash   int32
+}
+
+type EventDetail struct {
+	SlotId int32
+	DeviceId int32
+	Result int64
+	ResponseCode int32
 }
 
 func (m *Message) Pack() []byte {
@@ -227,4 +239,23 @@ func PackStockEventData(slotId byte) []byte {
 	ret = append(ret, slotId)
 	return ret
 
+}
+
+func (m *Message) SelfLog() string{
+	return fmt.Sprintf("%#v", m)
+}
+
+func (m *Message) InsertMessage(eventDetail *EventDetail, pack []byte){
+	db := sqlutils.GetShuttleDB()
+	sql := `insert into tbl_package(version, terminal_id, sequence, direction,event,send_time,create_time,
+	ip, slot_id, device_id, result,response_code,package) value (?,?,?,?,?,?,?,?,?,?,?,?,?)`
+	send_time :=  time.Unix(int64(m.CreateTime), 0).Format(DefDatetimeLayout)
+	now := time.Now().Format(DefDatetimeLayout)
+	res, err := db.Exec(sql, m.Version, m.TerminalId, m.Sequence, m.Direction, m.Event, send_time, now, "",
+		eventDetail.SlotId, eventDetail.DeviceId, eventDetail.Result, eventDetail.ResponseCode, pack)
+	fmt.Println(res, err, m.SelfLog())
+	if err != nil {
+		 log.Error("InsertMessage err", err, m.SelfLog())
+	}
+	log.Info("InsertMessage reply", res)
 }

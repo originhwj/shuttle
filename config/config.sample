@@ -1,0 +1,11 @@
+package config
+
+const (
+	Host = "127.0.0.1:8888"
+
+	//sql
+	SQL_HOST = ""
+	SQL_USER = "go"
+	SQL_PWD = ""
+
+)

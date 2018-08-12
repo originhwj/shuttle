@@ -15,13 +15,15 @@ import (
 	"regexp"
 	"io/ioutil"
 	"errors"
+	"./config"
+	"./utils/sqlutils"
 )
 
 var (
 	StartByte = []byte{0x02}
 	EndByte   = []byte{0x03}
 
-	Host      = ":8888"
+	Host      = config.Host
 	INBOX_LEN = 500
 	env       = flag.String("env", "test", "dev environment")
 	logPath   = flag.String("logPath", "./shuttle", "log path")
@@ -34,6 +36,15 @@ var (
 
 		-3: "查询服务器失败",
 		-4: "操作失败",
+		-5: "slot id不存在",
+		-6: "slot id不合法",
+		-7: "device id不存在",
+		-8: "device id不合法",
+		-9: "action id不存在",
+		-10: "action id不合法",
+		-11: "terminal id不存在",
+		-12: "terminal id不合法",
+
 	}
 )
 
@@ -183,6 +194,8 @@ func http_server(){
 	//mux[`/`] = &Router{"GET", index_handler, false}
 	//mux[`/(\d+)`] = &Router{"GET", test_handler, false}
 	mux[`/test`] = &Router{"GET", test_handler, true}
+	mux[`/terminal/instock`] = &Router{"POST", InStockHandler, true}
+	mux[`/terminal/outstock`] = &Router{"POST", OutStockHandler, true}
 
 	log.Warn("starting server...", server)
 	err := server.ListenAndServe()
@@ -199,6 +212,7 @@ func main() {
 
 	flag.Parse()
 	init_log(*logPath) //初始化日志
+	sqlutils.SetConfig(*env)
 
 	go http_server()
 	tcp_server()
