@@ -97,7 +97,7 @@ func (t *Terminal) write_loop() {
 			}
 			log.Info("server write finish", b)
 			t.bw.Flush()
-		case <-time.After(5 * time.Second):
+		case <-time.After(60 * time.Second):
 			//超时60秒,没有任何心跳信息 关掉
 			log.Warn("timeout close")
 			return
