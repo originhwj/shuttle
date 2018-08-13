@@ -8,6 +8,7 @@ import (
 
 	"../utils/message"
 	"../utils/sqlutils"
+	"../config"
 )
 
 var (
@@ -15,7 +16,7 @@ var (
 	EndByte   = []byte{0x03}
 	Ping      = []byte{1}
 
-	Host = "svr.train-wifi.com:8888"
+	Host = config.Host
 
 	INBOX_LEN = 500
 )
@@ -156,5 +157,5 @@ func testInsert(){
 }
 
 func main() {
-	testInsert()
+	Dial()
 }

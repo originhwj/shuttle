@@ -11,11 +11,11 @@ import (
 	"./utils/message"
 )
 
-var allTerminal  = SafeTerminalMap{t: make(map[int32]*Terminal)}
+var allTerminal = SafeTerminalMap{t: make(map[int32]*Terminal)}
 
 type SafeTerminalMap struct {
 	t map[int32] *Terminal
-	mu *sync.RWMutex
+	mu sync.RWMutex
 }
 
 
@@ -80,7 +80,9 @@ func (t *Terminal) Process() {
 					allTerminal.mu.Lock()
 					_, exist = allTerminal.t[terminalId]
 					if !exist{
+						t.TerminalId = terminalId
 						allTerminal.t[terminalId] = t
+						log.Info("add terminal map", t.SelfLog())
 					}
 					allTerminal.mu.Unlock()
 				}
@@ -104,6 +106,7 @@ func (t *Terminal) Close() {
 			allTerminal.mu.Lock()
 			delete(allTerminal.t, t.TerminalId)
 			allTerminal.mu.Unlock()
+			log.Info("release terminal map", t.SelfLog())
 		}
 	})
 
