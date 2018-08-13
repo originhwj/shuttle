@@ -11,6 +11,14 @@ import (
 	"./utils/message"
 )
 
+var allTerminal  = SafeTerminalMap{t: make(map[int32]*Terminal)}
+
+type SafeTerminalMap struct {
+	t map[int32] *Terminal
+	mu *sync.RWMutex
+}
+
+
 type Terminal struct {
 	Conn         net.Conn
 	mu           sync.Mutex
@@ -20,7 +28,7 @@ type Terminal struct {
 	bw           *bufio.Writer
 	writeTimeout time.Duration
 	readTimeout  time.Duration
-	TerminalId   int64
+	TerminalId   int32
 	inbox        chan []byte
 	closed       bool
 }
@@ -63,6 +71,21 @@ func (t *Terminal) Process() {
 		}
 		if resMsg, errCode := message.Parse2Message(data[:dataLen-1], packageLen); errCode == 0 && resMsg != nil {
 			//pingResponse := message.PackPing()
+			if t.TerminalId == 0 { // 第一次收到消息,注册到内存
+				terminalId := resMsg.TerminalId
+				allTerminal.mu.RLock()
+				_, exist := allTerminal.t[terminalId]
+				allTerminal.mu.RUnlock()
+				if !exist{
+					allTerminal.mu.Lock()
+					_, exist = allTerminal.t[terminalId]
+					if !exist{
+						allTerminal.t[terminalId] = t
+					}
+					allTerminal.mu.Unlock()
+				}
+			}
+
 			t.inbox <- resMsg.Pack()
 		}
 
@@ -77,6 +100,11 @@ func (t *Terminal) Close() {
 			log.Error("close conn err", err)
 		}
 		t.closed = true
+		if t.TerminalId != 0{
+			allTerminal.mu.Lock()
+			delete(allTerminal.t, t.TerminalId)
+			allTerminal.mu.Unlock()
+		}
 	})
 
 }
@@ -139,4 +167,8 @@ func (t *Terminal) crontabSendStockMessage() {
 		t.SendInStockMessage()
 	}
 
+}
+
+func (t *Terminal) SelfLog() string{
+	return fmt.Sprintf("%#v", t)
 }
