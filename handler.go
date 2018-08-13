@@ -24,67 +24,78 @@ func test_handler(w http.ResponseWriter, r *http.Request, args []string, pd []by
 	io.WriteString(w, string(res))
 }
 
+type QueryParams struct {
+	SlotId byte
+	DeviceId int32
+	ActionId int32
+	TerminalId int32
+}
 
-
-func OutStockHandler(w http.ResponseWriter, r *http.Request, args []string, pd []byte) {
+func checkParams(r *http.Request) (*QueryParams, int64){
 	_, exist := r.Form["slot_id"]
 	if !exist {
 		log.Println("slot_id not in request")
-		response_err(-5, &w)
-		return
+		return nil, -5
 	}
 	slot_id, err := strconv.ParseInt(string(r.Form["slot_id"][0]), 10, 32)
 	if err != nil {
 		log.Println("slot id convert int error", err, r.Form["slot_id"][0])
-		response_err(-6, &w)
-		return
+		return nil, -6
 	}
 
 	_, exist = r.Form["device_id"]
 	if !exist {
 		log.Println("device_id not in request")
-		response_err(-7, &w)
-		return
+		return nil, -7
 	}
 	device_id, err := strconv.ParseInt(string(r.Form["device_id"][0]), 10, 32)
 	if err != nil {
 		log.Println("device id convert int error", err, r.Form["device_id"][0])
-		response_err(-8, &w)
-		return
+		return nil, -8
 	}
 
 	_, exist = r.Form["action_id"]
 	if !exist {
 		log.Println("action_id not in request")
-		response_err(-9, &w)
-		return
+		return nil, -9
 	}
 	action_id, err := strconv.ParseInt(string(r.Form["action_id"][0]), 10, 32)
 	if err != nil {
 		log.Println("action id convert int error", err, r.Form["action_id"][0])
-		response_err(-10, &w)
-		return
+		return nil, -10
 	}
 
 	_, exist = r.Form["terminal_id"]
 	if !exist {
 		log.Println("terminal_id not in request")
-		response_err(-11, &w)
-		return
+		return nil, -11
 	}
 	terminal_id, err := strconv.ParseInt(string(r.Form["terminal_id"][0]), 10, 32)
 	if err != nil {
 		log.Println("terminal id convert int error", err, r.Form["terminal_id"][0])
-		response_err(-12, &w)
+		return nil, -12
+	}
+	return &QueryParams{
+		SlotId: byte(slot_id),
+		DeviceId: int32(device_id),
+		ActionId: int32(action_id),
+		TerminalId: int32(terminal_id),
+	}, 0
+}
+
+// curl -d "" "http://127.0.0.1:12000/terminal/outstock?slot_id=1&device_id=1&action_id=2&terminal_id=1"
+func OutStockHandler(w http.ResponseWriter, r *http.Request, args []string, pd []byte) {
+	queryParams, err := checkParams(r)
+	if err != 0 {
+		response_err(err, &w)
 		return
 	}
 
-	log.Info(slot_id, device_id, action_id, terminal_id)
-	sqlutils.OutStockTerminalDeviceId(int32(slot_id), int32(terminal_id))
-	testInsert(byte(slot_id), int32(device_id), int32(action_id), int32(terminal_id), false)
+	log.Info("queryParams", queryParams)
+	sqlutils.OutStockTerminalDeviceId(int32(queryParams.SlotId), queryParams.TerminalId)
+	testInsert(queryParams.SlotId, queryParams.DeviceId, queryParams.ActionId, queryParams.TerminalId, false)
 	data := map[string]interface{}{
 		"err": 0,
-
 	}
 	res, _ := json.Marshal(data)
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
@@ -92,62 +103,17 @@ func OutStockHandler(w http.ResponseWriter, r *http.Request, args []string, pd [
 	io.WriteString(w, string(res))
 }
 
+//curl -d "" "http://127.0.0.1:12000/terminal/instock?slot_id=1&device_id=1&action_id=2&terminal_id=1"
 func InStockHandler(w http.ResponseWriter, r *http.Request, args []string, pd []byte) {
-	_, exist := r.Form["slot_id"]
-	if !exist {
-		log.Println("slot_id not in request")
-		response_err(-5, &w)
-		return
-	}
-	slot_id, err := strconv.ParseInt(string(r.Form["slot_id"][0]), 10, 32)
-	if err != nil {
-		log.Println("slot id convert int error", err, r.Form["slot_id"][0])
-		response_err(-6, &w)
+	queryParams, err := checkParams(r)
+	if err != 0 {
+		response_err(err, &w)
 		return
 	}
 
-	_, exist = r.Form["device_id"]
-	if !exist {
-		log.Println("device_id not in request")
-		response_err(-7, &w)
-		return
-	}
-	device_id, err := strconv.ParseInt(string(r.Form["device_id"][0]), 10, 32)
-	if err != nil {
-		log.Println("device id convert int error", err, r.Form["device_id"][0])
-		response_err(-8, &w)
-		return
-	}
-
-	_, exist = r.Form["action_id"]
-	if !exist {
-		log.Println("action_id not in request")
-		response_err(-9, &w)
-		return
-	}
-	action_id, err := strconv.ParseInt(string(r.Form["action_id"][0]), 10, 32)
-	if err != nil {
-		log.Println("action id convert int error", err, r.Form["action_id"][0])
-		response_err(-10, &w)
-		return
-	}
-
-	_, exist = r.Form["terminal_id"]
-	if !exist {
-		log.Println("terminal_id not in request")
-		response_err(-11, &w)
-		return
-	}
-	terminal_id, err := strconv.ParseInt(string(r.Form["terminal_id"][0]), 10, 32)
-	if err != nil {
-		log.Println("terminal id convert int error", err, r.Form["terminal_id"][0])
-		response_err(-12, &w)
-		return
-	}
-
-	log.Info(slot_id, device_id, action_id, terminal_id)
-	sqlutils.InStockTerminalDeviceId(int32(device_id), int32(slot_id), int32(terminal_id))
-	testInsert(byte(slot_id), int32(device_id), int32(action_id), int32(terminal_id), true)
+	log.Info("queryParams", queryParams)
+	sqlutils.InStockTerminalDeviceId(queryParams.DeviceId, int32(queryParams.SlotId), queryParams.TerminalId)
+	testInsert(queryParams.SlotId, queryParams.DeviceId, queryParams.ActionId, queryParams.TerminalId, true)
 	data := map[string]interface{}{
 		"err": 0,
 
