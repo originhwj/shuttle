@@ -144,18 +144,20 @@ func (t *Terminal) SendOutStockMessage() {
 		Direction:  1,
 		Event:      message.OutStock,
 		TerminalId: 1,
+		EventData:  message.PackStockEventData(1),
 	}
 	t.inbox <- m.Pack()
 	log.Info("SendOutStockMessage")
 }
 
-func (t *Terminal) SendInStockMessage() {
+func (t *Terminal) SendInStockMessage(terminalId int32, slotId byte) {
 	m := &message.Message{
 		Version:    message.Ver,
 		Sequence:   1,
 		Direction:  1,
 		Event:      message.OutStock,
-		TerminalId: 1,
+		TerminalId: terminalId,
+		EventData:  message.PackStockEventData(slotId),
 	}
 	t.inbox <- m.Pack()
 	log.Info("SendInStockMessage")
@@ -167,11 +169,21 @@ func (t *Terminal) crontabSendStockMessage() {
 		if t.closed {
 			return
 		}
-		t.SendInStockMessage()
+		t.SendInStockMessage(1, 1)
 	}
 
 }
 
 func (t *Terminal) SelfLog() string{
 	return fmt.Sprintf("%#v", t)
+}
+
+func GetTerminalById(terminalId int32) *Terminal {
+	allTerminal.mu.RLock()
+	terminal, exist := allTerminal.t[terminalId]
+	allTerminal.mu.RUnlock()
+	if !exist {
+		return nil
+	}
+	return terminal
 }

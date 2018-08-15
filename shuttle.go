@@ -44,6 +44,7 @@ var (
 		-10: "action id不合法",
 		-11: "terminal id不存在",
 		-12: "terminal id不合法",
+		-13: "terminal尚未注册激活",
 
 	}
 )
