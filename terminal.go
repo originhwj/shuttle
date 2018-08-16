@@ -11,10 +11,10 @@ import (
 	"./utils/message"
 )
 
-var allTerminal = SafeTerminalMap{t: make(map[int32]*Terminal)}
+var allTerminal = SafeTerminalMap{t: make(map[uint32]*Terminal)}
 
 type SafeTerminalMap struct {
-	t map[int32] *Terminal
+	t map[uint32] *Terminal
 	mu sync.RWMutex
 }
 
@@ -28,7 +28,7 @@ type Terminal struct {
 	bw           *bufio.Writer
 	writeTimeout time.Duration
 	readTimeout  time.Duration
-	TerminalId   int32
+	TerminalId   uint32
 	inbox        chan []byte
 	closed       bool
 }
@@ -150,7 +150,7 @@ func (t *Terminal) SendOutStockMessage() {
 	log.Info("SendOutStockMessage")
 }
 
-func (t *Terminal) SendInStockMessage(terminalId int32, slotId byte) {
+func (t *Terminal) SendInStockMessage(terminalId uint32, slotId byte) {
 	m := &message.Message{
 		Version:    message.Ver,
 		Sequence:   1,
@@ -178,7 +178,7 @@ func (t *Terminal) SelfLog() string{
 	return fmt.Sprintf("%#v", t)
 }
 
-func GetTerminalById(terminalId int32) *Terminal {
+func GetTerminalById(terminalId uint32) *Terminal {
 	allTerminal.mu.RLock()
 	terminal, exist := allTerminal.t[terminalId]
 	allTerminal.mu.RUnlock()

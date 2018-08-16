@@ -46,7 +46,7 @@ func PackPingEventData() []byte {
 	ret = append(ret, byte(2))
 	for i := 1; i <= 2; i++ {
 		ret = append(ret, byte(i))
-		ret = append(ret, message.IntToBytes4(int32(i))...)
+		ret = append(ret, message.IntToBytes4(uint32(i))...)
 	}
 	fmt.Println(len(ret), ret)
 	return ret
@@ -55,10 +55,10 @@ func PackPingEventData() []byte {
 }
 
 func PackPing() []byte {
-	var sequence, terminalId int32
-	sequence = int32(time.Now().Unix())
+	var sequence, terminalId uint32
+	sequence = uint32(time.Now().Unix())
 	terminalId = 1
-	createTime := int32(time.Now().Unix())
+	createTime := uint32(time.Now().Unix())
 	eventData := PackPingEventData()
 
 	m := &message.Message{
@@ -74,10 +74,10 @@ func PackPing() []byte {
 }
 
 func PackOutStockConfirm() []byte {
-	var sequence, terminalId int32
-	sequence = int32(time.Now().Unix())
+	var sequence, terminalId uint32
+	sequence = uint32(time.Now().Unix())
 	terminalId = 1
-	createTime := int32(time.Now().Unix())
+	createTime := uint32(time.Now().Unix())
 	eventData := PackOutStockConfirmEventData()
 
 	m := &message.Message{
@@ -101,7 +101,8 @@ func Dial() {
 	go func() {
 		for {
 			time.Sleep(2 * time.Second)
-			pingResponse := PackPing()
+			pingResponse := []byte{2,0,0,0,57, 1,91,107, 171, 222, 1, 1, 0, 0, 0, 1, 91, 107, 171, 222, 0, 0, 0, 30, 0, 0, 64, 55, 116, 239,
+				136, 185, 119, 133, 64, 40, 63, 52, 214, 161, 97, 229, 1, 2, 1, 0, 0, 0, 1, 2, 0, 0, 0, 2, 0, 0, 39, 176, 3}
 			_, err := conn.Write(pingResponse)
 			if err != nil && err != io.EOF {
 				fmt.Println(err)
@@ -132,10 +133,10 @@ func Dial() {
 
 func testInsert(){
 	sqlutils.SetConfig("master")
-	var sequence, terminalId int32
-	sequence = int32(time.Now().Unix())
+	var sequence, terminalId uint32
+	sequence = uint32(time.Now().Unix())
 	terminalId = 1
-	createTime := int32(time.Now().Unix())
+	createTime := uint32(time.Now().Unix())
 	eventData := PackOutStockConfirmEventData()
 	eventDetail := &message.EventDetail{
 		SlotId: 1,
@@ -156,6 +157,15 @@ func testInsert(){
 
 }
 
+func shifting(a uint32) uint32 {
+	a = a << 3
+	return a
+}
+
 func main() {
-	Dial()
+	//Dial()
+	//a := []byte{2,0,0,0,57, 1,91,107, 171, 222, 1, 1, 0, 0, 0, 1, 91, 107, 171, 222, 0, 0, 0, 30, 0, 0, 64, 55, 116, 239,
+	//	136, 185, 119, 133, 64, 40, 63, 52, 214, 161, 97, 229, 1, 2, 1, 0, 0, 0, 1, 2, 0, 0, 0, 2, 0, 0, 39, 176, 3}
+	//fmt.Println(message.Bytes4ToInt(a))
+	fmt.Println(shifting(3067566100))
 }

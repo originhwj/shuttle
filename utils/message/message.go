@@ -32,7 +32,7 @@ const (
 	DefDatetimeLayout = "2006-01-02 15:04:05"
 )
 
-func IntToBytes4(m int32) []byte {
+func IntToBytes4(m uint32) []byte {
 	bytesBuffer := bytes.NewBuffer([]byte{})
 	binary.Write(bytesBuffer, binary.BigEndian, m)
 
@@ -41,7 +41,7 @@ func IntToBytes4(m int32) []byte {
 	return gbyte
 }
 
-func Bytes4ToInt(b []byte) int32 {
+func Bytes4ToInt(b []byte) uint32 {
 	xx := make([]byte, 4)
 	if len(b) == 2 {
 		xx = []byte{b[0], b[1], 0, 0}
@@ -51,7 +51,7 @@ func Bytes4ToInt(b []byte) int32 {
 
 	bytesBuffer := bytes.NewBuffer(xx)
 
-	var x int32
+	var x uint32
 	binary.Read(bytesBuffer, binary.BigEndian, &x)
 
 	return x
@@ -69,27 +69,27 @@ func ByteToFloat64(bytes []byte) float64 {
 	return math.Float64frombits(bits)
 }
 
-func shifting(a int32) int32 {
+func shifting(a uint32) uint32 {
 	a = a << 3
 	return a
 }
 
 type Message struct {
-	PackageLength int32
+	PackageLength uint32
 	Version       byte
-	Sequence      int32
+	Sequence      uint32
 	Direction     byte
 	Event         byte
-	TerminalId    int32
-	CreateTime    int32
-	EventLength   int32
+	TerminalId    uint32
+	CreateTime    uint32
+	EventLength   uint32
 	EventData     []byte
-	PackageHash   int32
+	PackageHash   uint32
 }
 
 type EventDetail struct {
 	SlotId int32
-	DeviceId int32
+	DeviceId uint32
 	Result int64
 	ResponseCode int32
 }
@@ -98,10 +98,10 @@ func (m *Message) Pack() []byte {
 	start := []byte{0x02}
 	end := []byte{0x03}
 
-	m.CreateTime = int32(time.Now().Unix())
-	m.EventLength = int32(len(m.EventData))
+	m.CreateTime = uint32(time.Now().Unix())
+	m.EventLength = uint32(len(m.EventData))
 	m.PackageLength = 27 + m.EventLength
-	m.PackageHash = m.PackageLength + m.Sequence + m.TerminalId + m.CreateTime + int32(m.EventLength)
+	m.PackageHash = m.PackageLength + m.Sequence + m.TerminalId + m.CreateTime + uint32(m.EventLength)
 
 	ret := make([]byte, 0, 1024)
 	ret = append(ret, start...)
@@ -189,7 +189,7 @@ func ParseEventData(event, direction byte, eventData []byte, m *Message) {
 	}
 }
 
-func Parse2Message(data []byte, packageLength int32) (*Message, int) {
+func Parse2Message(data []byte, packageLength uint32) (*Message, int) {
 	l := len(data)
 	if l < 24 { // eventData 至少一字节
 		log.Error("package size not long enough")
@@ -211,8 +211,11 @@ func Parse2Message(data []byte, packageLength int32) (*Message, int) {
 	}
 	eventData := data[19 : 19+eventLength]
 	packageHash := Bytes4ToInt(data[l-4:])
-
-	expectHash := shifting(int32(packageLength) + sequence + terminalId + createTime + int32(eventLength))
+	hashSum := uint32(packageLength) + sequence + terminalId + createTime + eventLength
+	expectHash := shifting(hashSum)
+	log.Info(hashSum, IntToBytes4(hashSum))
+	log.Info(expectHash, IntToBytes4(expectHash))
+	log.Info(packageLength, sequence, terminalId, createTime, eventLength, hashSum, expectHash, packageHash)
 	if expectHash != packageHash {
 		log.Error("hash valid failed", expectHash, packageHash)
 		return nil, -3

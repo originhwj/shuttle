@@ -34,7 +34,7 @@ func SetConfig(env string){
 }
 
 
-func OutStockTerminalDeviceId(slotId, terminalId int32){
+func OutStockTerminalDeviceId(slotId, terminalId uint32){
 	sql := "update tbl_terminal_slot set device_id = 0 where terminal_id=? and slot_id=?"
 	_, err := db.Exec(sql, terminalId, slotId)
 	if err != nil {
@@ -42,7 +42,7 @@ func OutStockTerminalDeviceId(slotId, terminalId int32){
 	}
 }
 
-func InStockTerminalDeviceId(deviceId, slotId, terminalId int32){
+func InStockTerminalDeviceId(deviceId, slotId, terminalId uint32){
 	sql := "update tbl_terminal_slot set device_id = ? where terminal_id=? and slot_id=?"
 	_, err := db.Exec(sql, deviceId, terminalId, slotId)
 	if err != nil {

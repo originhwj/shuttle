@@ -26,9 +26,9 @@ func test_handler(w http.ResponseWriter, r *http.Request, args []string, pd []by
 
 type QueryParams struct {
 	SlotId byte
-	DeviceId int32
-	ActionId int32
-	TerminalId int32
+	DeviceId uint32
+	ActionId uint32
+	TerminalId uint32
 }
 
 func checkParams(r *http.Request) (*QueryParams, int64){
@@ -77,9 +77,9 @@ func checkParams(r *http.Request) (*QueryParams, int64){
 	}
 	return &QueryParams{
 		SlotId: byte(slot_id),
-		DeviceId: int32(device_id),
-		ActionId: int32(action_id),
-		TerminalId: int32(terminal_id),
+		DeviceId: uint32(device_id),
+		ActionId: uint32(action_id),
+		TerminalId: uint32(terminal_id),
 	}, 0
 }
 
@@ -97,7 +97,7 @@ func OutStockHandler(w http.ResponseWriter, r *http.Request, args []string, pd [
 		response_err(-13, &w)
 		return
 	}
-	sqlutils.OutStockTerminalDeviceId(int32(queryParams.SlotId), queryParams.TerminalId)
+	sqlutils.OutStockTerminalDeviceId(uint32(queryParams.SlotId), queryParams.TerminalId)
 	testInsert(queryParams.SlotId, queryParams.DeviceId, queryParams.ActionId, queryParams.TerminalId, false)
 	data := map[string]interface{}{
 		"err": 0,
@@ -123,7 +123,7 @@ func InStockHandler(w http.ResponseWriter, r *http.Request, args []string, pd []
 		return
 	}
 	t.SendInStockMessage(queryParams.TerminalId, queryParams.SlotId)
-	sqlutils.InStockTerminalDeviceId(queryParams.DeviceId, int32(queryParams.SlotId), queryParams.TerminalId)
+	sqlutils.InStockTerminalDeviceId(queryParams.DeviceId, uint32(queryParams.SlotId), queryParams.TerminalId)
 	testInsert(queryParams.SlotId, queryParams.DeviceId, queryParams.ActionId, queryParams.TerminalId, true)
 	data := map[string]interface{}{
 		"err": 0,
@@ -136,7 +136,7 @@ func InStockHandler(w http.ResponseWriter, r *http.Request, args []string, pd []
 }
 
 // for test
-func PackOutStockConfirmEventData(sid byte, did, aid int32) []byte {
+func PackOutStockConfirmEventData(sid byte, did, aid uint32) []byte {
 	ret := make([]byte, 0, 6)
 	slotId := byte(sid)
 	deviceId := message.IntToBytes4(did)
@@ -150,11 +150,11 @@ func PackOutStockConfirmEventData(sid byte, did, aid int32) []byte {
 
 }
 
-func testInsert(sid byte, did, aid, tid int32, f bool){
-	var sequence, terminalId int32
-	sequence = int32(time.Now().Unix())
+func testInsert(sid byte, did, aid, tid uint32, f bool){
+	var sequence, terminalId uint32
+	sequence = uint32(time.Now().Unix())
 	terminalId = tid
-	createTime := int32(time.Now().Unix())
+	createTime := uint32(time.Now().Unix())
 	eventData := PackOutStockConfirmEventData(sid, did, aid)
 	eventDetail := &message.EventDetail{
 		SlotId: int32(sid),
