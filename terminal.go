@@ -69,7 +69,8 @@ func (t *Terminal) Process() {
 			log.Error("end err", end_buf)
 			return
 		}
-		if resMsg, errCode := message.Parse2Message(data[:dataLen-1], packageLen); errCode == 0 && resMsg != nil {
+		origin_data := append(buf, data...)
+		if resMsg, errCode := message.Parse2Message(data[:dataLen-1], origin_data, packageLen); errCode == 0 && resMsg != nil {
 			//pingResponse := message.PackPing()
 			if t.TerminalId == 0 { // 第一次收到消息,注册到内存
 				terminalId := resMsg.TerminalId
@@ -87,8 +88,11 @@ func (t *Terminal) Process() {
 					allTerminal.mu.Unlock()
 				}
 			}
-
-			t.inbox <- resMsg.Pack()
+			_msg := resMsg.Pack()
+			if resMsg.Event != message.Ping{
+				resMsg.InsertMessage(resMsg.EvDetail, _msg)
+			}
+			t.inbox <- _msg
 		}
 
 	}
@@ -137,20 +141,7 @@ func (t *Terminal) write_loop() {
 	}
 }
 
-func (t *Terminal) SendOutStockMessage() {
-	m := &message.Message{
-		Version:    message.Ver,
-		Sequence:   1,
-		Direction:  1,
-		Event:      message.OutStock,
-		TerminalId: 1,
-		EventData:  message.PackStockEventData(1),
-	}
-	t.inbox <- m.Pack()
-	log.Info("SendOutStockMessage")
-}
-
-func (t *Terminal) SendInStockMessage(terminalId uint32, slotId byte) {
+func (t *Terminal) SendOutStockMessage(terminalId uint32, slotId byte) {
 	m := &message.Message{
 		Version:    message.Ver,
 		Sequence:   1,
@@ -159,7 +150,30 @@ func (t *Terminal) SendInStockMessage(terminalId uint32, slotId byte) {
 		TerminalId: terminalId,
 		EventData:  message.PackStockEventData(slotId),
 	}
-	t.inbox <- m.Pack()
+	eventDetail := &message.EventDetail{
+		SlotId: int32(slotId),
+	}
+	_msg := m.Pack()
+	m.InsertMessage(eventDetail, _msg)
+	t.inbox <- _msg
+	log.Info("SendOutStockMessage")
+}
+
+func (t *Terminal) SendInStockMessage(terminalId uint32, slotId byte) {
+	m := &message.Message{
+		Version:    message.Ver,
+		Sequence:   1,
+		Direction:  1,
+		Event:      message.InStock,
+		TerminalId: terminalId,
+		EventData:  message.PackStockEventData(slotId),
+	}
+	eventDetail := &message.EventDetail{
+		SlotId: int32(slotId),
+	}
+	_msg := m.Pack()
+	m.InsertMessage(eventDetail, _msg)
+	t.inbox <- _msg
 	log.Info("SendInStockMessage")
 }
 
