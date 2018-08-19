@@ -85,6 +85,8 @@ type Message struct {
 	EventLength   uint32
 	EventData     []byte
 	PackageHash   uint32
+
+	EvDetail   *EventDetail
 }
 
 type EventDetail struct {
@@ -120,13 +122,14 @@ func (m *Message) Pack() []byte {
 	return ret
 }
 
-func ParseEventData(event, direction byte, eventData []byte, m *Message) {
+func ParseEventData(event, direction byte, eventData []byte, m *Message) *EventDetail{
+	eventDetail := &EventDetail{}
 	switch event {
 	case Ping:
 		m.EventData = []byte{1}
 		if len(eventData) < 20 {
 			log.Error("ping eventdata size not enough", len(eventData))
-			return
+			return nil
 		}
 		err_code := eventData[:2]
 		longitude := ByteToFloat64(eventData[2:10])
@@ -145,7 +148,7 @@ func ParseEventData(event, direction byte, eventData []byte, m *Message) {
 	case OutStock:
 		if len(eventData) != 1 {
 			log.Error("wrong size event data", eventData)
-			return
+			return nil
 		}
 		errCode := eventData[0]
 		if errCode != 0 {
@@ -155,7 +158,7 @@ func ParseEventData(event, direction byte, eventData []byte, m *Message) {
 	case InStock:
 		if len(eventData) != 1 {
 			log.Error("wrong size event data", eventData)
-			return
+			return nil
 		}
 		errCode := eventData[0]
 		if errCode != 0 {
@@ -166,7 +169,7 @@ func ParseEventData(event, direction byte, eventData []byte, m *Message) {
 		m.EventData = []byte{1}
 		if len(eventData) != 6 {
 			log.Error("OutStockconfirm size not equal", len(eventData))
-			return
+			return nil
 		}
 		soltId := eventData[0]
 		deviceId := Bytes4ToInt(eventData[1:5])
@@ -177,7 +180,7 @@ func ParseEventData(event, direction byte, eventData []byte, m *Message) {
 		m.EventData = []byte{1}
 		if len(eventData) != 6 {
 			log.Error("InStockconfirm size not equal", len(eventData))
-			return
+			return nil
 		}
 		soltId := eventData[0]
 		deviceId := eventData[1:5]
@@ -187,9 +190,10 @@ func ParseEventData(event, direction byte, eventData []byte, m *Message) {
 	default:
 		log.Info("not exist event", event)
 	}
+	return eventDetail
 }
 
-func Parse2Message(data []byte, packageLength uint32) (*Message, int) {
+func Parse2Message(data, origin []byte, packageLength uint32) (*Message, int) {
 	l := len(data)
 	if l < 24 { // eventData 至少一字节
 		log.Error("package size not long enough")
@@ -222,16 +226,30 @@ func Parse2Message(data []byte, packageLength uint32) (*Message, int) {
 	}
 
 	log.Info(version, sequence, direction, event, terminalId, createTime, eventLength, eventData, packageHash)
+	// Todo 对解析成功的包进行入库记录
 	m := &Message{
 		Version:    version,
 		Sequence:   sequence,
-		Direction:  2,
+		Direction:  direction,
 		Event:      event,
 		TerminalId: terminalId,
+		CreateTime: createTime,
 	}
-	ParseEventData(event, direction, eventData, m)
+	eventDeatil := ParseEventData(event, direction, eventData, m)
+	if eventDeatil == nil{
+		// 解析有问题的包,不处理
+		return nil, 0
+	}
+	if event != Ping{
+		m.InsertMessage(eventDeatil, origin)
+	}
 	if event == OutStock || event == InStock { //出库入库不需要回包
 		return nil, 0
+	}
+	// Todo 回包入库
+	m.Direction = 2
+	if event == OutStockConfirm || event == InStockConfirm {
+		m.EvDetail = eventDeatil
 	}
 	return m, 0
 
@@ -256,7 +274,7 @@ func (m *Message) InsertMessage(eventDetail *EventDetail, pack []byte){
 	now := time.Now().Format(DefDatetimeLayout)
 	res, err := db.Exec(sql, m.Version, m.TerminalId, m.Sequence, m.Direction, m.Event, send_time, now, "",
 		eventDetail.SlotId, eventDetail.DeviceId, eventDetail.Result, eventDetail.ResponseCode, pack)
-	fmt.Println(res, err, m.SelfLog())
+	log.Println(res, err, m.SelfLog())
 	if err != nil {
 		 log.Error("InsertMessage err", err, m.SelfLog())
 	}
