@@ -153,8 +153,10 @@ func ParseEventData(event, direction byte, eventData []byte, m *Message) *EventD
 		errCode := eventData[0]
 		if errCode != 0 {
 			log.Error("wrong errCode", errCode)
+			eventDetail.ResponseCode = int32(errCode)
+		}else {
+			log.Info("outstock success")
 		}
-		log.Info("outstock success")
 	case InStock:
 		if len(eventData) != 1 {
 			log.Error("wrong size event data", eventData)
@@ -163,8 +165,10 @@ func ParseEventData(event, direction byte, eventData []byte, m *Message) *EventD
 		errCode := eventData[0]
 		if errCode != 0 {
 			log.Error("wrong errCode", errCode)
+			eventDetail.ResponseCode = int32(errCode)
+		}else {
+			log.Info("instock success")
 		}
-		log.Info("instock success")
 	case OutStockConfirm:
 		m.EventData = []byte{1}
 		if len(eventData) != 6 {
@@ -174,6 +178,9 @@ func ParseEventData(event, direction byte, eventData []byte, m *Message) *EventD
 		soltId := eventData[0]
 		deviceId := Bytes4ToInt(eventData[1:5])
 		result := eventData[5]
+		eventDetail.SlotId = int32(soltId)
+		eventDetail.DeviceId = deviceId
+		eventDetail.Result = int64(result)
 		log.Info("outstock confirm success", soltId, deviceId, result)
 		m.EventData = []byte{0}
 	case InStockConfirm:
@@ -183,8 +190,11 @@ func ParseEventData(event, direction byte, eventData []byte, m *Message) *EventD
 			return nil
 		}
 		soltId := eventData[0]
-		deviceId := eventData[1:5]
+		deviceId := Bytes4ToInt(eventData[1:5])
 		result := eventData[5]
+		eventDetail.SlotId = int32(soltId)
+		eventDetail.DeviceId = deviceId
+		eventDetail.Result = int64(result)
 		log.Info("instock confirm success", soltId, deviceId, result)
 		m.EventData = []byte{0}
 	default:
@@ -248,8 +258,12 @@ func Parse2Message(data, origin []byte, packageLength uint32) (*Message, int) {
 	}
 	// Todo 回包入库
 	m.Direction = 2
-	if event == OutStockConfirm || event == InStockConfirm {
+	if event == OutStockConfirm { // 同步slot
 		m.EvDetail = eventDeatil
+		sqlutils.OutStockTerminalDeviceId(uint32(eventDeatil.SlotId), m.TerminalId)
+	} else if event == InStockConfirm {
+		m.EvDetail = eventDeatil
+		sqlutils.InStockTerminalDeviceId(eventDeatil.DeviceId, uint32(eventDeatil.SlotId), m.TerminalId)
 	}
 	return m, 0
 

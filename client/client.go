@@ -73,6 +73,23 @@ func PackPing() []byte {
 	return m.Pack()
 }
 
+func PackStockResponse(errCode byte) []byte {
+	createTime := uint32(time.Now().Unix())
+	eventData := []byte{errCode}
+
+	m := &message.Message{
+		Version:    1,
+		Sequence:   1,
+		Direction:  1,
+		Event:      message.OutStock,
+		TerminalId: 1,
+		CreateTime: createTime,
+		EventData:  eventData,
+	}
+	return m.Pack()
+}
+
+
 func PackOutStockConfirm() []byte {
 	var sequence, terminalId uint32
 	sequence = uint32(time.Now().Unix())
@@ -100,10 +117,11 @@ func Dial() {
 	}
 	go func() {
 		for {
-			time.Sleep(2 * time.Second)
+
 			//pingResponse := []byte{2,0,0,0,57, 1,91,107, 171, 222, 1, 1, 0, 0, 0, 1, 91, 107, 171, 222, 0, 0, 0, 30, 0, 0, 64, 55, 116, 239,
 			//	136, 185, 119, 133, 64, 40, 63, 52, 214, 161, 97, 229, 1, 2, 1, 0, 0, 0, 1, 2, 0, 0, 0, 2, 0, 0, 39, 176, 3}
-			pingResponse := PackPing()
+			//pingResponse := PackStockResponse(1)
+			pingResponse := PackOutStockConfirm()
 			_, err := conn.Write(pingResponse)
 			if err != nil && err != io.EOF {
 				fmt.Println(err)
@@ -112,13 +130,14 @@ func Dial() {
 				fmt.Println("EOF conn")
 				return
 			}
+			time.Sleep(30 * time.Second)
 		}
 
 	}()
 	for {
 
 		//conn.Write([]byte("hello"))
-		data := make([]byte, 128)
+		data := make([]byte, 256)
 		res, err := conn.Read(data)
 		if err != nil && err != io.EOF {
 			fmt.Println(err)

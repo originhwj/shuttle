@@ -85,8 +85,8 @@ func tcp_server() {
 			Conn:         conn,
 			bw:           bufio.NewWriter(conn),
 			br:           bufio.NewReader(conn),
-			readTimeout:  10 * time.Second,
-			writeTimeout: 10 * time.Second,
+			readTimeout:  60 * time.Second,
+			writeTimeout: 60 * time.Second,
 			inbox:        make(chan []byte, INBOX_LEN),
 		}
 
