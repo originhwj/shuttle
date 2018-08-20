@@ -97,7 +97,7 @@ func OutStockHandler(w http.ResponseWriter, r *http.Request, args []string, pd [
 		response_err(-13, &w)
 		return
 	}
-	t.SendOutStockMessage(queryParams.TerminalId, queryParams.SlotId)
+	t.SendOutStockMessage(queryParams.ActionId, queryParams.TerminalId, queryParams.SlotId)
 	//sqlutils.OutStockTerminalDeviceId(uint32(queryParams.SlotId), queryParams.TerminalId)
 	//testInsert(queryParams.SlotId, queryParams.DeviceId, queryParams.ActionId, queryParams.TerminalId, false)
 	data := map[string]interface{}{
@@ -123,7 +123,7 @@ func InStockHandler(w http.ResponseWriter, r *http.Request, args []string, pd []
 		response_err(-13, &w)
 		return
 	}
-	t.SendInStockMessage(queryParams.TerminalId, queryParams.SlotId)
+	t.SendInStockMessage(queryParams.ActionId, queryParams.TerminalId, queryParams.SlotId)
 	//sqlutils.InStockTerminalDeviceId(queryParams.DeviceId, uint32(queryParams.SlotId), queryParams.TerminalId)
 	//testInsert(queryParams.SlotId, queryParams.DeviceId, queryParams.ActionId, queryParams.TerminalId, true)
 	data := map[string]interface{}{

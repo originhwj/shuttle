@@ -269,9 +269,10 @@ func Parse2Message(data, origin []byte, packageLength uint32) (*Message, int) {
 
 }
 
-func PackStockEventData(slotId byte) []byte {
-	ret := make([]byte, 0, 1)
+func PackStockEventData(slotId byte, actionId uint32) []byte {
+	ret := make([]byte, 0, 5)
 	ret = append(ret, slotId)
+	ret = append(ret, IntToBytes4(actionId)...)
 	return ret
 
 }

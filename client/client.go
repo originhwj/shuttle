@@ -101,7 +101,7 @@ func PackOutStockConfirm() []byte {
 		Version:    1,
 		Sequence:   sequence,
 		Direction:  1,
-		Event:      message.OutStockConfirm,
+		Event:      message.InStockConfirm,
 		TerminalId: terminalId,
 		CreateTime: createTime,
 		EventData:  eventData,

@@ -141,14 +141,14 @@ func (t *Terminal) write_loop() {
 	}
 }
 
-func (t *Terminal) SendOutStockMessage(terminalId uint32, slotId byte) {
+func (t *Terminal) SendOutStockMessage(actionId, terminalId uint32, slotId byte) {
 	m := &message.Message{
 		Version:    message.Ver,
 		Sequence:   1,
 		Direction:  1,
 		Event:      message.OutStock,
 		TerminalId: terminalId,
-		EventData:  message.PackStockEventData(slotId),
+		EventData:  message.PackStockEventData(slotId, actionId),
 	}
 	eventDetail := &message.EventDetail{
 		SlotId: int32(slotId),
@@ -159,14 +159,14 @@ func (t *Terminal) SendOutStockMessage(terminalId uint32, slotId byte) {
 	log.Info("SendOutStockMessage")
 }
 
-func (t *Terminal) SendInStockMessage(terminalId uint32, slotId byte) {
+func (t *Terminal) SendInStockMessage(actionId, terminalId uint32, slotId byte) {
 	m := &message.Message{
 		Version:    message.Ver,
 		Sequence:   1,
 		Direction:  1,
 		Event:      message.InStock,
 		TerminalId: terminalId,
-		EventData:  message.PackStockEventData(slotId),
+		EventData:  message.PackStockEventData(slotId, actionId),
 	}
 	eventDetail := &message.EventDetail{
 		SlotId: int32(slotId),
@@ -183,7 +183,7 @@ func (t *Terminal) crontabSendStockMessage() {
 		if t.closed {
 			return
 		}
-		t.SendInStockMessage(1, 1)
+		t.SendInStockMessage(1, 1, 1)
 	}
 
 }
