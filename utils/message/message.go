@@ -94,6 +94,7 @@ type EventDetail struct {
 	DeviceId uint32
 	Result int64
 	ResponseCode int32
+	ActionId uint32
 }
 
 func (m *Message) Pack() []byte {
@@ -146,57 +147,67 @@ func ParseEventData(event, direction byte, eventData []byte, m *Message) *EventD
 		log.Info("parse ping", err_code, longitude, latitude, electric, slot_count, slot_detail)
 		m.EventData = []byte{0}
 	case OutStock:
-		if len(eventData) != 1 {
+		if len(eventData) != 5 {
 			log.Error("wrong size event data", eventData)
 			return nil
 		}
 		errCode := eventData[0]
+		actionId := Bytes4ToInt(eventData[1:5])
+		eventDetail.ActionId = actionId
 		if errCode != 0 {
 			log.Error("wrong errCode", errCode)
 			eventDetail.ResponseCode = int32(errCode)
 		}else {
-			log.Info("outstock success")
+			log.Info("outstock success", actionId)
 		}
 	case InStock:
-		if len(eventData) != 1 {
+		if len(eventData) != 5 {
 			log.Error("wrong size event data", eventData)
 			return nil
 		}
 		errCode := eventData[0]
+		actionId := Bytes4ToInt(eventData[1:5])
+		eventDetail.ActionId = actionId
 		if errCode != 0 {
 			log.Error("wrong errCode", errCode)
 			eventDetail.ResponseCode = int32(errCode)
 		}else {
-			log.Info("instock success")
+			log.Info("instock success", actionId)
 		}
 	case OutStockConfirm:
 		m.EventData = []byte{1}
-		if len(eventData) != 6 {
+		if len(eventData) != 10 {
 			log.Error("OutStockconfirm size not equal", len(eventData))
 			return nil
 		}
-		soltId := eventData[0]
-		deviceId := Bytes4ToInt(eventData[1:5])
-		result := eventData[5]
+		actionId := Bytes4ToInt(eventData[0:4])
+		soltId := eventData[4]
+		deviceId := Bytes4ToInt(eventData[5:9])
+		result := eventData[9]
 		eventDetail.SlotId = int32(soltId)
 		eventDetail.DeviceId = deviceId
 		eventDetail.Result = int64(result)
-		log.Info("outstock confirm success", soltId, deviceId, result)
+		eventDetail.ActionId = actionId
+		log.Info("outstock confirm success", actionId, soltId, deviceId, result)
 		m.EventData = []byte{0}
+		m.EventData  = append(m.EventData, eventData[0:4]...)
 	case InStockConfirm:
 		m.EventData = []byte{1}
-		if len(eventData) != 6 {
+		if len(eventData) != 10 {
 			log.Error("InStockconfirm size not equal", len(eventData))
 			return nil
 		}
-		soltId := eventData[0]
-		deviceId := Bytes4ToInt(eventData[1:5])
-		result := eventData[5]
+		actionId := Bytes4ToInt(eventData[0:4])
+		soltId := eventData[4]
+		deviceId := Bytes4ToInt(eventData[5:9])
+		result := eventData[9]
 		eventDetail.SlotId = int32(soltId)
 		eventDetail.DeviceId = deviceId
 		eventDetail.Result = int64(result)
-		log.Info("instock confirm success", soltId, deviceId, result)
+		eventDetail.ActionId = actionId
+		log.Info("instock confirm success",actionId, soltId, deviceId, result)
 		m.EventData = []byte{0}
+		m.EventData  = append(m.EventData, eventData[0:4]...)
 	default:
 		log.Info("not exist event", event)
 	}
