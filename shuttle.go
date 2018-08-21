@@ -195,8 +195,8 @@ func http_server(){
 	//mux[`/`] = &Router{"GET", index_handler, false}
 	//mux[`/(\d+)`] = &Router{"GET", test_handler, false}
 	mux[`/test`] = &Router{"GET", test_handler, true}
-	mux[`/terminal/instock`] = &Router{"POST", InStockHandler, true}
-	mux[`/terminal/outstock`] = &Router{"POST", OutStockHandler, true}
+	mux[`/terminal/instock`] = &Router{"GET", InStockHandler, true}
+	mux[`/terminal/outstock`] = &Router{"GET", OutStockHandler, true}
 
 	log.Warn("starting server...", server)
 	err := server.ListenAndServe()
