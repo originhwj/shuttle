@@ -8,4 +8,8 @@ const (
 	SQL_USER = "go"
 	SQL_PWD = ""
 
+	//redis
+    REDIS_HOST = "127.0.0.1:16379"
+    REDIS_PWD = ""
+    REDIS_DB = 0
 )

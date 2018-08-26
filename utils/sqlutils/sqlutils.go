@@ -50,6 +50,6 @@ func InStockTerminalDeviceId(deviceId, slotId, terminalId uint32){
 	}
 }
 
-//func UpdateSlotInfo(slot_id byte, device_id uint32){
-//	sql := ""
-//}
+func GetPackageBySequence(sequence uint32) []byte{
+	return []byte{}
+}

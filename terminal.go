@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"./utils/message"
+	"./utils/redisutils"
 )
 
 var allTerminal = SafeTerminalMap{t: make(map[uint32]*Terminal)}
@@ -91,6 +92,8 @@ func (t *Terminal) Process() {
 			_msg := resMsg.Pack()
 			if resMsg.Event != message.Ping{
 				resMsg.InsertMessage(resMsg.EvDetail, _msg)
+			}else if resMsg.Event == message.InStock || resMsg.Event == message.OutStock{
+				//redisutils.AddIntoMessageSequenceList(resMsg.Sequence)
 			}
 			t.inbox <- _msg
 		}
@@ -200,4 +203,13 @@ func GetTerminalById(terminalId uint32) *Terminal {
 		return nil
 	}
 	return terminal
+}
+
+//一个对redis未完成消息的消费队列
+func CheckAndReSendMessage(){
+	ticker := time.NewTicker(time.Second * 5)
+	for range ticker.C {
+		msgs := redisutils.GetMessageSequence()
+		log.Info("CheckAndReSendMessage", msgs)
+	}
 }
