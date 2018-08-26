@@ -95,6 +95,15 @@ type EventDetail struct {
 	Result int64
 	ResponseCode int32
 	ActionId uint32
+	// heartbeat
+	Error uint32
+	Latitude float64
+	Longitude float64
+	Electric byte
+	SlotCount byte
+	SlotDetail []byte
+	Ip string
+
 }
 
 func (m *Message) Pack() []byte {
@@ -144,6 +153,12 @@ func ParseEventData(event, direction byte, eventData []byte, m *Message) *EventD
 				log.Warn("slot count not equal")
 			}
 		}
+		eventDetail.Error = Bytes4ToInt([]byte{0, 0, err_code[0], err_code[1]})
+		eventDetail.Latitude = latitude
+		eventDetail.Longitude = longitude
+		eventDetail.Electric = electric
+		eventDetail.SlotCount = slot_count
+		eventDetail.SlotDetail = slot_detail
 		log.Info("parse ping", err_code, longitude, latitude, electric, slot_count, slot_detail)
 		m.EventData = []byte{0}
 	case OutStock:
@@ -261,7 +276,9 @@ func Parse2Message(data, origin []byte, packageLength uint32) (*Message, int) {
 		// 解析有问题的包,不处理
 		return nil, 0
 	}
-	if event != Ping{
+	if event == Ping{
+		m.InsertHeartBeatMessage(eventDeatil, origin)
+	} else {
 		m.InsertMessage(eventDeatil, origin)
 	}
 	if event == OutStock || event == InStock { //出库入库不需要回包
@@ -306,3 +323,76 @@ func (m *Message) InsertMessage(eventDetail *EventDetail, pack []byte){
 	}
 	log.Info("InsertMessage reply", res)
 }
+
+func (m *Message) InsertHeartBeatMessage(eventDetail *EventDetail, pack []byte){
+	db := sqlutils.GetShuttleDB()
+	sql := `insert into tbl_heartbeat(version, terminal_id,send_time,receive_time,error,latitude,longitude,
+	electric,slot_count,ip,package) value (?,?,?,?,?,?,?,?,?,?,?)`
+	send_time :=  time.Unix(int64(m.CreateTime), 0).Format(DefDatetimeLayout)
+	now := time.Now().Format(DefDatetimeLayout)
+	res, err := db.Exec(sql, m.Version, m.TerminalId, send_time, now, eventDetail.Error, eventDetail.Latitude,
+		eventDetail.Longitude, eventDetail.Electric, eventDetail.SlotCount, eventDetail.Ip, pack)
+	log.Println(res, err, m.SelfLog())
+
+	if err != nil {
+		log.Error("InsertMessage err", err, m.SelfLog())
+		return
+	}
+	heartId, err := res.LastInsertId()
+	log.Info("InsertMessage reply", heartId)
+	if err != nil{
+		log.Error("get last insert id err", err, heartId)
+		return
+	}
+	// 更新tbl_heartbeat_slot_info
+	ParseSlotDetail(eventDetail, heartId)
+
+}
+
+func ParseSlotDetail(eventDetail *EventDetail, heartId int64) bool{
+	slot_count := eventDetail.SlotCount
+	slot_detail := eventDetail.SlotDetail
+	if int(slot_count) <= 0 || len(slot_detail)/5 != int(slot_count){
+		log.Warn("slot count not equal")
+		return false
+	}
+	db := sqlutils.GetShuttleDB()
+	sql := "insert into tbl_heartbeat_slot_info(heartbeat_id, slot_id, device_id) values "
+	for i := 0; i < len(slot_detail);i+=5{
+		slotId := slot_detail[i]
+		deviceId := Bytes4ToInt(slot_detail[i+1:i+5])
+		param := fmt.Sprintf("(%d,%d,%d),", heartId, slotId, deviceId)
+		sql += param
+	}
+	sql = sql[:len(sql)-1]
+	log.Info("slot info sql", sql)
+	res, err := db.Exec(sql)
+	if err != nil{
+		log.Error("insert slot info error", err, slot_count, slot_detail)
+		return false
+	}
+	log.Info("Insert SlotDetail success", heartId, res)
+
+	//tx, err := db.Begin()
+	//if err != nil {
+	//	log.Error("start slot info transaction error", err, slot_count, slot_detail)
+	//	return false
+	//}
+	//defer tx.Rollback()
+	//sql := "insert into tbl_heartbeat_slot_info(heartbeat_id, slot_id, device_id) value ()"
+	//for i := 0; i < len(slot_detail);i+=5{
+	//	slotId := slot_detail[i]
+	//	deviceId := Bytes4ToInt(slot_detail[i+1:i+5])
+	//	_, err = tx.Exec(sql, slotId, deviceId)
+	//	if err != nil {
+	//		log.Error("update slot info error", err)
+	//		return false
+	//	}
+	//}
+	//if err := tx.Commit(); err != nil {
+	//	log.Error("commit slot info transaction error",  err, slot_count, slot_detail)
+	//	return false
+	//}
+	return true
+}
+
