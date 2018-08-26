@@ -49,3 +49,7 @@ func InStockTerminalDeviceId(deviceId, slotId, terminalId uint32){
 		log.Error("InStockTerminalDeviceId err", err, )
 	}
 }
+
+//func UpdateSlotInfo(slot_id byte, device_id uint32){
+//	sql := ""
+//}

@@ -22,10 +22,11 @@ var (
 )
 
 func PackOutStockConfirmEventData() []byte {
-	ret := make([]byte, 0, 6)
+	ret := make([]byte, 0, 10)
 	slotId := byte(1)
 	deviceId := message.IntToBytes4(1)
 	result := byte(0)
+	ret = append(ret, deviceId...)
 	ret = append(ret, slotId)
 	ret = append(ret, deviceId...)
 	ret = append(ret, result)
@@ -121,7 +122,8 @@ func Dial() {
 			//pingResponse := []byte{2,0,0,0,57, 1,91,107, 171, 222, 1, 1, 0, 0, 0, 1, 91, 107, 171, 222, 0, 0, 0, 30, 0, 0, 64, 55, 116, 239,
 			//	136, 185, 119, 133, 64, 40, 63, 52, 214, 161, 97, 229, 1, 2, 1, 0, 0, 0, 1, 2, 0, 0, 0, 2, 0, 0, 39, 176, 3}
 			//pingResponse := PackStockResponse(1)
-			pingResponse := PackOutStockConfirm()
+			//pingResponse := PackOutStockConfirm()
+			pingResponse := PackPing()
 			_, err := conn.Write(pingResponse)
 			if err != nil && err != io.EOF {
 				fmt.Println(err)
