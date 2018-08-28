@@ -10,15 +10,16 @@ import (
 
 	"./utils/message"
 	"./utils/redisutils"
+	"./utils/sqlutils"
+	"strconv"
 )
 
 var allTerminal = SafeTerminalMap{t: make(map[uint32]*Terminal)}
 
 type SafeTerminalMap struct {
-	t map[uint32] *Terminal
+	t  map[uint32]*Terminal
 	mu sync.RWMutex
 }
-
 
 type Terminal struct {
 	Conn         net.Conn
@@ -78,10 +79,10 @@ func (t *Terminal) Process() {
 				allTerminal.mu.RLock()
 				_, exist := allTerminal.t[terminalId]
 				allTerminal.mu.RUnlock()
-				if !exist{
+				if !exist {
 					allTerminal.mu.Lock()
 					_, exist = allTerminal.t[terminalId]
-					if !exist{
+					if !exist {
 						t.TerminalId = terminalId
 						allTerminal.t[terminalId] = t
 						log.Info("add terminal map", t.SelfLog())
@@ -90,9 +91,9 @@ func (t *Terminal) Process() {
 				}
 			}
 			_msg := resMsg.Pack()
-			if resMsg.Event != message.Ping{
+			if resMsg.Event != message.Ping {
 				resMsg.InsertMessage(resMsg.EvDetail, _msg)
-			}else if resMsg.Event == message.InStock || resMsg.Event == message.OutStock{
+			} else if resMsg.Event == message.InStock || resMsg.Event == message.OutStock {
 				//redisutils.AddIntoMessageSequenceList(resMsg.Sequence)
 			}
 			t.inbox <- _msg
@@ -109,7 +110,7 @@ func (t *Terminal) Close() {
 			log.Error("close conn err", err)
 		}
 		t.closed = true
-		if t.TerminalId != 0{
+		if t.TerminalId != 0 {
 			allTerminal.mu.Lock()
 			delete(allTerminal.t, t.TerminalId)
 			allTerminal.mu.Unlock()
@@ -191,7 +192,7 @@ func (t *Terminal) crontabSendStockMessage() {
 
 }
 
-func (t *Terminal) SelfLog() string{
+func (t *Terminal) SelfLog() string {
 	return fmt.Sprintf("%#v", t)
 }
 
@@ -206,10 +207,32 @@ func GetTerminalById(terminalId uint32) *Terminal {
 }
 
 //一个对redis未完成消息的消费队列
-func CheckAndReSendMessage(){
-	ticker := time.NewTicker(time.Second * 5)
+func CheckAndReSendMessage() {
+	ticker := time.NewTicker(time.Second * 10)
 	for range ticker.C {
 		msgs := redisutils.GetMessageSequence()
 		log.Info("CheckAndReSendMessage", msgs)
+		for i := 0; i+1 < len(msgs); i += 2 {
+			value := msgs[i]
+			seq, err := strconv.Atoi(value)
+			if err != nil {
+				continue
+			}
+			msg, terminalId := sqlutils.GetPackageBySequence(uint32(seq))
+			if msg != nil {
+				go ResendToTerminal(msg, terminalId)
+			}
+		}
 	}
+}
+
+
+func ResendToTerminal(msg []byte, terminalId uint32) {
+	t := GetTerminalById(terminalId)
+	if t == nil {
+		log.Warn("not exist terminal, msg cannot resend", terminalId, msg)
+		return
+	}
+	log.Info("msg resend", terminalId, msg)
+	t.inbox <- msg
 }

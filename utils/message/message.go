@@ -7,6 +7,7 @@ import (
 	"time"
 	"../log"
 	"../sqlutils"
+	//"../redisutils"
 	"fmt"
 )
 
@@ -282,6 +283,8 @@ func Parse2Message(data, origin []byte, packageLength uint32) (*Message, int) {
 		m.InsertMessage(eventDeatil, origin)
 	}
 	if event == OutStock || event == InStock { //出库入库不需要回包
+		// redis去除需要确认的消息
+		//redisutils.RemoveMessageSequenceList(sequence)
 		return nil, 0
 	}
 	// Todo 回包入库

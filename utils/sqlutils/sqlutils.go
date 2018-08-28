@@ -50,13 +50,14 @@ func InStockTerminalDeviceId(deviceId, slotId, terminalId uint32){
 	}
 }
 
-func GetPackageBySequence(sequence uint32) []byte{
-	sql := "select package from tbl_package where sequence=? and direction=1 limit 1"
+func GetPackageBySequence(sequence uint32) ([]byte, uint32){
+	sql := "select package, terminal_id from tbl_package where sequence=? and direction=1 limit 1"
 	var p []byte
-	err := db.QueryRow(sql, sequence).Scan(&p)
+	var terminalId uint32
+	err := db.QueryRow(sql, sequence).Scan(&p, &terminalId)
 	if err != nil {
-		log.Error("GetPackageBySequence err", err, )
-		return nil
+		log.Error("GetPackageBySequence err", err, sequence)
+		return nil, terminalId
 	}
-	return p
+	return p, terminalId
 }
