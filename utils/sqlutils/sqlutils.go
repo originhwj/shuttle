@@ -51,5 +51,12 @@ func InStockTerminalDeviceId(deviceId, slotId, terminalId uint32){
 }
 
 func GetPackageBySequence(sequence uint32) []byte{
-	return []byte{}
+	sql := "select package from tbl_package where sequence=? and direction=1 limit 1"
+	var p []byte
+	err := db.QueryRow(sql, sequence).Scan(&p)
+	if err != nil {
+		log.Error("GetPackageBySequence err", err, )
+		return nil
+	}
+	return p
 }
