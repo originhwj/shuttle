@@ -6,6 +6,7 @@ import (
 	"../../config"
 	"fmt"
 	"../log"
+	"time"
 )
 
 
@@ -13,6 +14,10 @@ var(
 	db *sql.DB
 )
 
+const (
+	DefDateLayout     = "2006-01-02"
+	DefDatetimeLayout = "2006-01-02 15:04:05"
+)
 
 func GetShuttleDB() *sql.DB {
 	return db
@@ -60,4 +65,14 @@ func GetPackageBySequence(sequence uint32) ([]byte, uint32){
 		return nil, terminalId
 	}
 	return p, terminalId
+}
+
+
+func UpdateLastHeartbeat(heartbeatStatus byte, terminalId uint32){
+	sql := "update tbl_terminal set last_heartbeat=?, heartbeat_status=? where terminal_id=?"
+	now := time.Now().Format(DefDatetimeLayout)
+	_, err := db.Exec(sql, now, heartbeatStatus, terminalId)
+	if err != nil {
+		log.Error("UpdateLastHeartbeat", heartbeatStatus, terminalId)
+	}
 }
