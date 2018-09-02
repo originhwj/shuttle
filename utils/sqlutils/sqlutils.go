@@ -68,9 +68,13 @@ func GetPackageBySequence(sequence uint32) ([]byte, uint32){
 }
 
 
-func UpdateLastHeartbeat(heartbeatStatus byte, terminalId uint32){
+func UpdateLastHeartbeat(heartbeatErr uint32, terminalId uint32){
 	sql := "update tbl_terminal set last_heartbeat=?, heartbeat_status=? where terminal_id=?"
 	now := time.Now().Format(DefDatetimeLayout)
+	heartbeatStatus := 1
+	if heartbeatErr != 0 {
+		heartbeatStatus = 0
+	}
 	_, err := db.Exec(sql, now, heartbeatStatus, terminalId)
 	if err != nil {
 		log.Error("UpdateLastHeartbeat", heartbeatStatus, terminalId)

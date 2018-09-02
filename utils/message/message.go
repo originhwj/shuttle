@@ -7,6 +7,7 @@ import (
 	"time"
 	"../log"
 	"../sqlutils"
+	"../callback"
 	//"../redisutils"
 	"fmt"
 )
@@ -20,6 +21,7 @@ var (
 	Fail5   = []byte{0x00, 0x10}
 
 	Ver byte = 1
+
 )
 
 const (
@@ -292,9 +294,11 @@ func Parse2Message(data, origin []byte, packageLength uint32) (*Message, int) {
 	if event == OutStockConfirm { // 同步slot
 		m.EvDetail = eventDeatil
 		sqlutils.OutStockTerminalDeviceId(uint32(eventDeatil.SlotId), m.TerminalId)
+		go callback.OutStockCallBack(eventDeatil.ActionId, m.TerminalId, eventDeatil.DeviceId, uint32(eventDeatil.Result))
 	} else if event == InStockConfirm {
 		m.EvDetail = eventDeatil
 		sqlutils.InStockTerminalDeviceId(eventDeatil.DeviceId, uint32(eventDeatil.SlotId), m.TerminalId)
+		go callback.InStockCallBack(eventDeatil.ActionId, m.TerminalId, eventDeatil.DeviceId, uint32(eventDeatil.Result))
 	}
 	return m, 0
 
@@ -349,6 +353,8 @@ func (m *Message) InsertHeartBeatMessage(eventDetail *EventDetail, pack []byte){
 	}
 	// 更新tbl_heartbeat_slot_info
 	ParseSlotDetail(eventDetail, heartId)
+	// 更新tbl_terminal 心跳
+	sqlutils.UpdateLastHeartbeat(eventDetail.Error, m.TerminalId)
 
 }
 
@@ -376,26 +382,8 @@ func ParseSlotDetail(eventDetail *EventDetail, heartId int64) bool{
 	}
 	log.Info("Insert SlotDetail success", heartId, res)
 
-	//tx, err := db.Begin()
-	//if err != nil {
-	//	log.Error("start slot info transaction error", err, slot_count, slot_detail)
-	//	return false
-	//}
-	//defer tx.Rollback()
-	//sql := "insert into tbl_heartbeat_slot_info(heartbeat_id, slot_id, device_id) value ()"
-	//for i := 0; i < len(slot_detail);i+=5{
-	//	slotId := slot_detail[i]
-	//	deviceId := Bytes4ToInt(slot_detail[i+1:i+5])
-	//	_, err = tx.Exec(sql, slotId, deviceId)
-	//	if err != nil {
-	//		log.Error("update slot info error", err)
-	//		return false
-	//	}
-	//}
-	//if err := tx.Commit(); err != nil {
-	//	log.Error("commit slot info transaction error",  err, slot_count, slot_detail)
-	//	return false
-	//}
 	return true
 }
+
+
 

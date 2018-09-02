@@ -115,6 +115,8 @@ func (t *Terminal) Close() {
 			delete(allTerminal.t, t.TerminalId)
 			allTerminal.mu.Unlock()
 			log.Info("release terminal map", t.SelfLog())
+			// 更新心跳表状态
+			sqlutils.UpdateLastHeartbeat(1, t.TerminalId)
 		}
 	})
 
