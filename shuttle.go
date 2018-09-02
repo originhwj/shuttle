@@ -216,5 +216,6 @@ func main() {
 	sqlutils.SetConfig(*env)
 
 	go http_server()
+	//go CheckAndReSendMessage()
 	tcp_server()
 }
