@@ -150,7 +150,7 @@ func (t *Terminal) write_loop() {
 func (t *Terminal) SendOutStockMessage(actionId, terminalId uint32, slotId byte) {
 	m := &message.Message{
 		Version:    message.Ver,
-		Sequence:   1,
+		Sequence:   uint32(time.Now().Unix()),
 		Direction:  1,
 		Event:      message.OutStock,
 		TerminalId: terminalId,
@@ -168,7 +168,7 @@ func (t *Terminal) SendOutStockMessage(actionId, terminalId uint32, slotId byte)
 func (t *Terminal) SendInStockMessage(actionId, terminalId uint32, slotId byte) {
 	m := &message.Message{
 		Version:    message.Ver,
-		Sequence:   1,
+		Sequence:   uint32(time.Now().Unix()),
 		Direction:  1,
 		Event:      message.InStock,
 		TerminalId: terminalId,

@@ -26,8 +26,8 @@ var httpCallbackClient = &http.Client{
 }
 
 var (
-	InStockConfirmCallbackUrl  = "http://api.train-wifi.com/callback/devicein?actionID=%d&terminalID=%d&deviceID=%d&result=%d"
-	OUtStockConfirmCallbackUrl = "http://api.train-wifi.com/callback/devicein?actionID=%d&terminalID=%d&deviceID=%d&result=%d"
+	InStockConfirmCallbackUrl  = "http://api.train-wifi.com/callback/devicein?actionID=%d&terminalID=%d&deviceID=%d&result=%d&slotID=%d"
+	OUtStockConfirmCallbackUrl = "http://api.train-wifi.com/callback/devicein?actionID=%d&terminalID=%d&deviceID=%d&result=%d&slotID=%d"
 
 	HTTPNotOKError = errors.New("HTTP status not OK")
 )
@@ -71,8 +71,8 @@ func PhraseHttpCallback(url, method string, query_dict map[string]interface{}, o
 	return nil
 }
 
-func InStockCallBack(actionId, terminalId, deviceId, result uint32) {
-	url := fmt.Sprintf(InStockConfirmCallbackUrl, actionId, terminalId, deviceId, result)
+func InStockCallBack(actionId, terminalId, deviceId, result, slotId uint32) {
+	url := fmt.Sprintf(InStockConfirmCallbackUrl, actionId, terminalId, deviceId, result, slotId)
 	qd := make(map[string]interface{})
 	res := QueryRsp{}
 	err := PhraseHttpCallback(url, "POST", qd, &res)
@@ -83,8 +83,8 @@ func InStockCallBack(actionId, terminalId, deviceId, result uint32) {
 	log.Info("InStockCallBack res", res)
 }
 
-func OutStockCallBack(actionId, terminalId, deviceId, result uint32) {
-	url := fmt.Sprintf(OUtStockConfirmCallbackUrl, actionId, terminalId, deviceId, result)
+func OutStockCallBack(actionId, terminalId, deviceId, result, slotId uint32) {
+	url := fmt.Sprintf(OUtStockConfirmCallbackUrl, actionId, terminalId, deviceId, result, slotId)
 	qd := make(map[string]interface{})
 	res := QueryRsp{}
 	err := PhraseHttpCallback(url, "POST", qd, &res)

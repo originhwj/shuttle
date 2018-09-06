@@ -282,6 +282,7 @@ func Parse2Message(data, origin []byte, packageLength uint32) (*Message, int) {
 	if event == Ping{
 		m.InsertHeartBeatMessage(eventDeatil, origin)
 	} else {
+		// 检查是否2次消息,只对出入库消息确认判重
 		m.InsertMessage(eventDeatil, origin)
 	}
 	if event == OutStock || event == InStock { //出库入库不需要回包
@@ -294,11 +295,13 @@ func Parse2Message(data, origin []byte, packageLength uint32) (*Message, int) {
 	if event == OutStockConfirm { // 同步slot
 		m.EvDetail = eventDeatil
 		sqlutils.OutStockTerminalDeviceId(uint32(eventDeatil.SlotId), m.TerminalId)
-		go callback.OutStockCallBack(eventDeatil.ActionId, m.TerminalId, eventDeatil.DeviceId, uint32(eventDeatil.Result))
+		go callback.OutStockCallBack(eventDeatil.ActionId, m.TerminalId, eventDeatil.DeviceId,
+			uint32(eventDeatil.Result), uint32(eventDeatil.SlotId))
 	} else if event == InStockConfirm {
 		m.EvDetail = eventDeatil
 		sqlutils.InStockTerminalDeviceId(eventDeatil.DeviceId, uint32(eventDeatil.SlotId), m.TerminalId)
-		go callback.InStockCallBack(eventDeatil.ActionId, m.TerminalId, eventDeatil.DeviceId, uint32(eventDeatil.Result))
+		go callback.InStockCallBack(eventDeatil.ActionId, m.TerminalId, eventDeatil.DeviceId,
+			uint32(eventDeatil.Result), uint32(eventDeatil.SlotId))
 	}
 	return m, 0
 
@@ -306,8 +309,8 @@ func Parse2Message(data, origin []byte, packageLength uint32) (*Message, int) {
 
 func PackStockEventData(slotId byte, actionId uint32) []byte {
 	ret := make([]byte, 0, 5)
-	ret = append(ret, slotId)
 	ret = append(ret, IntToBytes4(actionId)...)
+	ret = append(ret, slotId)
 	return ret
 
 }

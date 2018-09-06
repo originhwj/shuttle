@@ -122,8 +122,8 @@ func Dial() {
 			//pingResponse := []byte{2,0,0,0,57, 1,91,107, 171, 222, 1, 1, 0, 0, 0, 1, 91, 107, 171, 222, 0, 0, 0, 30, 0, 0, 64, 55, 116, 239,
 			//	136, 185, 119, 133, 64, 40, 63, 52, 214, 161, 97, 229, 1, 2, 1, 0, 0, 0, 1, 2, 0, 0, 0, 2, 0, 0, 39, 176, 3}
 			//pingResponse := PackStockResponse(1)
-			//pingResponse := PackOutStockConfirm()
-			pingResponse := PackPing()
+			pingResponse := PackOutStockConfirm()
+			//pingResponse := PackPing()
 			_, err := conn.Write(pingResponse)
 			if err != nil && err != io.EOF {
 				fmt.Println(err)
