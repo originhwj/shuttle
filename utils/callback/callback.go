@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"strings"
 	"time"
+	"../../config"
 )
 
 var netTransport = &http.Transport{
@@ -26,8 +27,8 @@ var httpCallbackClient = &http.Client{
 }
 
 var (
-	InStockConfirmCallbackUrl  = "http://api.train-wifi.com/callback/devicein?actionID=%d&terminalID=%d&deviceID=%d&result=%d&slotID=%d"
-	OUtStockConfirmCallbackUrl = "http://api.train-wifi.com/callback/devicein?actionID=%d&terminalID=%d&deviceID=%d&result=%d&slotID=%d"
+	InStockConfirmCallbackUrl  = config.CALLBACK_URL + "/callback/devicein?actionID=%d&terminalID=%d&deviceID=%d&result=%d&slotID=%d"
+	OUtStockConfirmCallbackUrl = config.CALLBACK_URL + "/callback/deviceout?actionID=%d&terminalID=%d&deviceID=%d&result=%d&slotID=%d"
 
 	HTTPNotOKError = errors.New("HTTP status not OK")
 )

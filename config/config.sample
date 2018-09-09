@@ -12,4 +12,7 @@ const (
     REDIS_HOST = "127.0.0.1:16379"
     REDIS_PWD = ""
     REDIS_DB = 0
+
+    // callback
+    CALLBACK_URL = "127.0.0.1:12000"
 )
