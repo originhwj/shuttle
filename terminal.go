@@ -12,6 +12,7 @@ import (
 	"./utils/redisutils"
 	"./utils/sqlutils"
 	"strconv"
+	"strings"
 )
 
 var allTerminal = SafeTerminalMap{t: make(map[uint32]*Terminal)}
@@ -167,6 +168,7 @@ func (t *Terminal) SendOutStockMessage(actionId, terminalId uint32, slotId byte)
 	m.InsertMessage(eventDetail, _msg)
 	t.inbox <- _msg
 	log.Info("SendOutStockMessage")
+	redisutils.AddIntoMessageSequenceList(seq, terminalId, actionId)
 	return 0
 }
 
@@ -190,6 +192,7 @@ func (t *Terminal) SendInStockMessage(actionId, terminalId uint32, slotId byte) 
 	m.InsertMessage(eventDetail, _msg)
 	t.inbox <- _msg
 	log.Info("SendInStockMessage")
+	redisutils.AddIntoMessageSequenceList(seq, terminalId, actionId)
 	return 0
 }
 
@@ -226,13 +229,26 @@ func CheckAndReSendMessage() {
 		log.Info("CheckAndReSendMessage", msgs)
 		for i := 0; i+1 < len(msgs); i += 2 {
 			value := msgs[i]
-			seq, err := strconv.Atoi(value)
-			if err != nil {
+			items := strings.Split(value, "|")
+			log.Info("resend msg process item", items)
+			// 对错误的value清除,理论上不会存在这类value,增加兼容
+			if len(items) < 2{
+				redisutils.RemoveMessageSequenceList(0, 0, 0, value)
 				continue
 			}
-			msg, terminalId := sqlutils.GetPackageBySequence(uint32(seq))
+			seq, err := strconv.Atoi(items[0])
+			if err != nil {
+				redisutils.RemoveMessageSequenceList(0, 0, 0, value)
+				continue
+			}
+			terminal_id, err := strconv.Atoi(items[1])
+			if err != nil {
+				redisutils.RemoveMessageSequenceList(0, 0, 0, value)
+				continue
+			}
+			msg := sqlutils.GetPackageByTerminalSequence(uint32(seq), uint32(terminal_id))
 			if msg != nil {
-				go ResendToTerminal(msg, terminalId)
+				go ResendToTerminal(msg, uint32(terminal_id))
 			}
 		}
 	}

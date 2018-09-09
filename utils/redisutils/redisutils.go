@@ -5,6 +5,7 @@ import (
 	"../log"
 	"github.com/garyburd/redigo/redis"
 	"time"
+	"fmt"
 )
 
 var (
@@ -81,12 +82,13 @@ func GetMessageSequence() []string{
 	return res
 }
 
-func AddIntoMessageSequenceList(sequence uint32) bool{
+func AddIntoMessageSequenceList(sequence, terminal_id, action_id uint32) bool{
 	rp := GetRedisPool()
 	redis_conn := rp.Get()
 	defer redis_conn.Close()
 	now := time.Now().Unix()
-	_, err := redis_conn.Do("ZADD", MessageConfirmList, now, sequence)
+	value := fmt.Sprintf("%d|%d|%d", sequence, terminal_id, action_id)
+	_, err := redis_conn.Do("ZADD", MessageConfirmList, now, value)
 	if err != nil {
 		log.Error("AddIntoMessageSequenceList err", sequence, err)
 		return false
@@ -94,11 +96,14 @@ func AddIntoMessageSequenceList(sequence uint32) bool{
 	return true
 }
 
-func RemoveMessageSequenceList(sequence uint32) bool{
+func RemoveMessageSequenceList(sequence, terminal_id, action_id uint32, value string) bool{
 	rp := GetRedisPool()
 	redis_conn := rp.Get()
 	defer redis_conn.Close()
-	_, err := redis_conn.Do("ZREM", MessageConfirmList, sequence)
+	if value == "" {
+		value = fmt.Sprintf("%d|%d|%d", sequence, terminal_id, action_id)
+	}
+	_, err := redis_conn.Do("ZREM", MessageConfirmList, value)
 	if err != nil {
 		log.Error("RemoveMessageSequenceList err", sequence, err)
 		return false
