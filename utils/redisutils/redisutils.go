@@ -13,6 +13,8 @@ var (
 	MessageConfirmList = "chuansuo:confirm:msg:list"
 	ExpireTs int64 = 24*3600
 
+	SequenceGenKey = "chuansuo:sequence:gen"
+
 )
 
 func redisConnPool(server, password string, db int) *redis.Pool {
@@ -102,4 +104,17 @@ func RemoveMessageSequenceList(sequence uint32) bool{
 		return false
 	}
 	return true
+}
+
+func SequenceGen() uint32 {
+	rp := GetRedisPool()
+	redis_conn := rp.Get()
+	defer redis_conn.Close()
+	reply, err := redis_conn.Do("INCR", SequenceGenKey)
+	res, err := redis.Int(reply, err)
+	if err != nil {
+		log.Error("SequenceGen err", err)
+		return 0
+	}
+	return uint32(res)
 }
