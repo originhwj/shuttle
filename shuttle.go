@@ -45,6 +45,7 @@ var (
 		-11: "terminal id不存在",
 		-12: "terminal id不合法",
 		-13: "terminal尚未注册激活",
+		-14: "sequence生成出错",
 
 	}
 )

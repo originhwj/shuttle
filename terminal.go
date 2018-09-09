@@ -147,10 +147,14 @@ func (t *Terminal) write_loop() {
 	}
 }
 
-func (t *Terminal) SendOutStockMessage(actionId, terminalId uint32, slotId byte) {
+func (t *Terminal) SendOutStockMessage(actionId, terminalId uint32, slotId byte) int64{
+	seq := redisutils.SequenceGen()
+	if seq == 0 {
+		return -14
+	}
 	m := &message.Message{
 		Version:    message.Ver,
-		Sequence:   uint32(time.Now().Unix()),
+		Sequence:   seq,
 		Direction:  1,
 		Event:      message.OutStock,
 		TerminalId: terminalId,
@@ -163,12 +167,17 @@ func (t *Terminal) SendOutStockMessage(actionId, terminalId uint32, slotId byte)
 	m.InsertMessage(eventDetail, _msg)
 	t.inbox <- _msg
 	log.Info("SendOutStockMessage")
+	return 0
 }
 
-func (t *Terminal) SendInStockMessage(actionId, terminalId uint32, slotId byte) {
+func (t *Terminal) SendInStockMessage(actionId, terminalId uint32, slotId byte) int64{
+	seq := redisutils.SequenceGen()
+	if seq == 0 {
+		return -14
+	}
 	m := &message.Message{
 		Version:    message.Ver,
-		Sequence:   uint32(time.Now().Unix()),
+		Sequence:   seq,
 		Direction:  1,
 		Event:      message.InStock,
 		TerminalId: terminalId,
@@ -181,6 +190,7 @@ func (t *Terminal) SendInStockMessage(actionId, terminalId uint32, slotId byte) 
 	m.InsertMessage(eventDetail, _msg)
 	t.inbox <- _msg
 	log.Info("SendInStockMessage")
+	return 0
 }
 
 func (t *Terminal) crontabSendStockMessage() {

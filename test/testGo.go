@@ -31,13 +31,17 @@ func testSql()  {
 }
 
 func testCallback(){
-	callback.OutStockCallBack(1,1,1,0)
+	callback.OutStockCallBack(1,1,1,0,1)
+}
+
+func testGen(){
+	fmt.Println(redisutils.SequenceGen())
 }
 
 func main() {
 	//fmt.Println(redisutils.AddIntoMessageSequenceList(1))
 	//testSql()
 	//fmt.Println(redisutils.RemoveMessageSequenceList(1))
-	//testRedis()
-	testCallback()
+	testGen()
+	//testCallback()
 }
