@@ -279,10 +279,15 @@ func Parse2Message(data, origin []byte, packageLength uint32) (*Message, int) {
 		// 解析有问题的包,不处理
 		return nil, 0
 	}
+	var isSync bool = false
 	if event == Ping{
 		m.InsertHeartBeatMessage(eventDeatil, origin)
 	} else {
-		// 检查是否2次消息,只对出入库消息确认判重
+		// 多次从机柜收到的消息,只需恢复即可,可以重复入库,但不更新terminalDevice
+		res := sqlutils.GetPackageByTerminalSequence(m.Sequence, m.TerminalId)
+		if res == nil {
+			isSync = true
+		}
 		m.InsertMessage(eventDeatil, origin)
 	}
 	if event == OutStock || event == InStock { //出库入库不需要回包
@@ -292,17 +297,20 @@ func Parse2Message(data, origin []byte, packageLength uint32) (*Message, int) {
 	}
 	// Todo 回包入库
 	m.Direction = 2
-	if event == OutStockConfirm { // 同步slot
-		m.EvDetail = eventDeatil
-		sqlutils.OutStockTerminalDeviceId(uint32(eventDeatil.SlotId), m.TerminalId)
-		go callback.OutStockCallBack(eventDeatil.ActionId, m.TerminalId, eventDeatil.DeviceId,
-			uint32(eventDeatil.Result), uint32(eventDeatil.SlotId))
-	} else if event == InStockConfirm {
-		m.EvDetail = eventDeatil
-		sqlutils.InStockTerminalDeviceId(eventDeatil.DeviceId, uint32(eventDeatil.SlotId), m.TerminalId)
-		go callback.InStockCallBack(eventDeatil.ActionId, m.TerminalId, eventDeatil.DeviceId,
-			uint32(eventDeatil.Result), uint32(eventDeatil.SlotId))
+	m.EvDetail = eventDeatil
+	if isSync{
+		log.Info(event, "isSync", m.TerminalId, m.Sequence)
+		if event == OutStockConfirm { // 同步slot
+			sqlutils.OutStockTerminalDeviceId(uint32(eventDeatil.SlotId), m.TerminalId)
+			go callback.OutStockCallBack(eventDeatil.ActionId, m.TerminalId, eventDeatil.DeviceId,
+				uint32(eventDeatil.Result), uint32(eventDeatil.SlotId))
+		} else if event == InStockConfirm {
+			sqlutils.InStockTerminalDeviceId(eventDeatil.DeviceId, uint32(eventDeatil.SlotId), m.TerminalId)
+			go callback.InStockCallBack(eventDeatil.ActionId, m.TerminalId, eventDeatil.DeviceId,
+				uint32(eventDeatil.Result), uint32(eventDeatil.SlotId))
+		}
 	}
+
 	return m, 0
 
 }

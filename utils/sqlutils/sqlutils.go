@@ -67,6 +67,18 @@ func GetPackageBySequence(sequence uint32) ([]byte, uint32){
 	return p, terminalId
 }
 
+func GetPackageByTerminalSequence(sequence, terminal_id uint32) []byte{
+	sql := "select package, terminal_id from tbl_package where sequence=? and terminal_id=? and direction=1 limit 1"
+	var p []byte
+	var terminalId uint32
+	err := db.QueryRow(sql, sequence, terminal_id).Scan(&p, &terminalId)
+	if err != nil {
+		log.Error("GetPackageByTerminalSequence err", err, sequence)
+		return nil
+	}
+	return p
+}
+
 
 func UpdateLastHeartbeat(heartbeatErr uint32, terminalId uint32){
 	sql := "update tbl_terminal set last_heartbeat=?, heartbeat_status=? where terminal_id=?"
