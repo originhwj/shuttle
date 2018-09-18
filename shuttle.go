@@ -219,7 +219,7 @@ func main() {
 
 	go http_server()
 	go func() {
-		log.Println(http.ListenAndServe(":6000", nil)) // pprof
+		log.Println(http.ListenAndServe(":12001", nil)) // pprof
 	}()
 	//go CheckAndReSendMessage()
 	tcp_server()
