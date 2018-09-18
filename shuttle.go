@@ -218,6 +218,9 @@ func main() {
 	sqlutils.SetConfig(*env)
 
 	go http_server()
+	go func() {
+		log.Println(http.ListenAndServe(":6000", nil)) // pprof
+	}()
 	//go CheckAndReSendMessage()
 	tcp_server()
 }
