@@ -9,6 +9,7 @@ import (
 	"os"
 	"syscall"
 	"net/http"
+	_ "net/http/pprof"
 	"encoding/json"
 	"io"
 	"runtime"
