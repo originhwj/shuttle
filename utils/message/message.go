@@ -330,11 +330,11 @@ func (m *Message) SelfLog() string{
 func (m *Message) InsertMessage(eventDetail *EventDetail, pack []byte){
 	db := sqlutils.GetShuttleDB()
 	sql := `insert into tbl_package(version, terminal_id, sequence, direction,event,send_time,create_time,
-	ip, slot_id, device_id, result,response_code,package) value (?,?,?,?,?,?,?,?,?,?,?,?,?)`
+	ip, action_id, slot_id, device_id, result,response_code,package) value (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
 	send_time :=  time.Unix(int64(m.CreateTime), 0).Format(DefDatetimeLayout)
 	now := time.Now().Format(DefDatetimeLayout)
 	res, err := db.Exec(sql, m.Version, m.TerminalId, m.Sequence, m.Direction, m.Event, send_time, now, "",
-		eventDetail.SlotId, eventDetail.DeviceId, eventDetail.Result, eventDetail.ResponseCode, pack)
+		eventDetail.ActionId, eventDetail.SlotId, eventDetail.DeviceId, eventDetail.Result, eventDetail.ResponseCode, pack)
 	log.Println(res, err, m.SelfLog())
 	if err != nil {
 		 log.Error("InsertMessage err", err, m.SelfLog())

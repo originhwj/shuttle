@@ -162,6 +162,7 @@ func (t *Terminal) SendOutStockMessage(actionId, terminalId uint32, slotId byte)
 	}
 	eventDetail := &message.EventDetail{
 		SlotId: int32(slotId),
+		ActionId: actionId,
 	}
 	_msg := m.Pack()
 	m.InsertMessage(eventDetail, _msg)
@@ -185,6 +186,7 @@ func (t *Terminal) SendInStockMessage(actionId, terminalId uint32, slotId byte) 
 	}
 	eventDetail := &message.EventDetail{
 		SlotId: int32(slotId),
+		ActionId: actionId,
 	}
 	_msg := m.Pack()
 	m.InsertMessage(eventDetail, _msg)
