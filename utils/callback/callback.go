@@ -29,7 +29,7 @@ var httpCallbackClient = &http.Client{
 var (
 	InStockConfirmCallbackUrl  = config.CALLBACK_URL + "/callback/devicein?actionID=%d&terminalID=%d&deviceID=%d&result=%d&slotID=%d"
 	OUtStockConfirmCallbackUrl = config.CALLBACK_URL + "/callback/deviceout?actionID=%d&terminalID=%d&deviceID=%d&result=%d&slotID=%d"
-
+	SyncTerminalCallbackUrl    = config.CALLBACK_URL + "/callback/initDevice?deviceID=%d"
 	HTTPNotOKError = errors.New("HTTP status not OK")
 )
 
@@ -94,4 +94,17 @@ func OutStockCallBack(actionId, terminalId, deviceId, result, slotId uint32) {
 		return
 	}
 	log.Info("OutStockCallBack res", res)
+}
+
+
+func SyncTerminal(terminalId uint32){
+	url := fmt.Sprintf(SyncTerminalCallbackUrl, terminalId)
+	qd := make(map[string]interface{})
+	res := QueryRsp{}
+	err := PhraseHttpCallback(url, "GET", qd, &res)
+	if err != nil {
+		log.Error("SyncTerminal err", terminalId, err)
+		return
+	}
+	log.Info("SyncTerminal res", res)
 }
