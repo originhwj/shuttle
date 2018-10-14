@@ -92,3 +92,13 @@ func UpdateLastHeartbeat(heartbeatErr uint32, terminalId uint32){
 		log.Error("UpdateLastHeartbeat", heartbeatStatus, terminalId)
 	}
 }
+
+func CheckTerminalExist(terminalId uint32) bool{
+	sql := "select terminal_id from tbl_terminal where terminal_id=? limit 1"
+	err := db.QueryRow(sql, terminalId).Scan(&terminalId)
+	if err != nil {
+		log.Warn("CheckTerminalExist empty", terminalId)
+		return false
+	}
+	return true
+}

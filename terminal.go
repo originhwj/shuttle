@@ -11,6 +11,7 @@ import (
 	"./utils/message"
 	"./utils/redisutils"
 	"./utils/sqlutils"
+	"./utils/callback"
 	"strconv"
 )
 
@@ -75,7 +76,11 @@ func (t *Terminal) Process() {
 		if resMsg, errCode := message.Parse2Message(data[:dataLen-1], origin_data, packageLen); errCode == 0 && resMsg != nil {
 			//pingResponse := message.PackPing()
 			if t.TerminalId == 0 { // 第一次收到消息,注册到内存
+				// 如果没有在数据库注册,同步一下
 				terminalId := resMsg.TerminalId
+				if !sqlutils.CheckTerminalExist(terminalId){
+					go callback.SyncTerminal(terminalId)
+				}
 				allTerminal.mu.RLock()
 				_, exist := allTerminal.t[terminalId]
 				allTerminal.mu.RUnlock()
