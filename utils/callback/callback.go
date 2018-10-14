@@ -29,7 +29,7 @@ var httpCallbackClient = &http.Client{
 var (
 	InStockConfirmCallbackUrl  = config.CALLBACK_URL + "/callback/devicein?actionID=%d&terminalID=%d&deviceID=%d&result=%d&slotID=%d"
 	OUtStockConfirmCallbackUrl = config.CALLBACK_URL + "/callback/deviceout?actionID=%d&terminalID=%d&deviceID=%d&result=%d&slotID=%d"
-	SyncTerminalCallbackUrl    = config.CALLBACK_URL + "/callback/initDevice?deviceID=%d"
+	SyncTerminalCallbackUrl    = config.CALLBACK_URL + "/callback/initTerminal?terminalID=%d"
 	HTTPNotOKError = errors.New("HTTP status not OK")
 )
 
