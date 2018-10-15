@@ -104,7 +104,7 @@ func CheckTerminalExist(terminalId uint32) bool{
 }
 
 func ResetTerminalStatus() bool{
-	sql := "update tbl_terminal set last_heartbeat=?, heartbeat_status=?"
+	sql := "update tbl_terminal set last_heartbeat=?, heartbeat_status=? where heart_status != 0"
 	now := time.Now().Format(DefDatetimeLayout)
 	heartbeatStatus := 0
 	_, err := db.Exec(sql, now, heartbeatStatus)
