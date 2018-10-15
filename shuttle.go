@@ -217,6 +217,9 @@ func main() {
 	init_log(*logPath) //初始化日志
 	sqlutils.SetConfig(*env)
 
+	// reset all terminal
+	sqlutils.ResetTerminalStatus()
+
 	go http_server()
 	go func() {
 		log.Println(http.ListenAndServe(":12001", nil)) // pprof
