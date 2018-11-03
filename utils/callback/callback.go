@@ -81,7 +81,7 @@ func InStockCallBack(actionId, terminalId, deviceId, result, slotId uint32) {
 		log.Error("InStockCallBack err", actionId, terminalId, deviceId, result, err)
 		return
 	}
-	log.Info("InStockCallBack res", res)
+	log.Info("InStockCallBack res", url, res)
 }
 
 func OutStockCallBack(actionId, terminalId, deviceId, result, slotId uint32) {
