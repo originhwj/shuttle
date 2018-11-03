@@ -293,6 +293,16 @@ func Parse2Message(data, origin []byte, packageLength uint32) (*Message, int) {
 	if event == OutStock || event == InStock { //出库入库不需要回包
 		// redis去除需要确认的消息
 		//redisutils.RemoveMessageSequenceList(sequence)
+		if eventDeatil.ResponseCode != 0 {
+			if event == OutStock {
+				go callback.OutStockCallBack(eventDeatil.ActionId, m.TerminalId, eventDeatil.DeviceId,
+					uint32(eventDeatil.ResponseCode), uint32(eventDeatil.SlotId))
+			}
+			if event == InStock {
+				go callback.InStockCallBack(eventDeatil.ActionId, m.TerminalId, eventDeatil.DeviceId,
+					uint32(eventDeatil.ResponseCode), uint32(eventDeatil.SlotId))
+			}
+		}
 		return nil, 0
 	}
 	// Todo 回包入库
@@ -301,11 +311,11 @@ func Parse2Message(data, origin []byte, packageLength uint32) (*Message, int) {
 	if isSync{
 		log.Info(event, "isSync", m.TerminalId, m.Sequence)
 		if event == OutStockConfirm { // 同步slot
-			sqlutils.OutStockTerminalDeviceId(uint32(eventDeatil.SlotId), m.TerminalId)
+			//sqlutils.OutStockTerminalDeviceId(uint32(eventDeatil.SlotId), m.TerminalId)
 			go callback.OutStockCallBack(eventDeatil.ActionId, m.TerminalId, eventDeatil.DeviceId,
 				uint32(eventDeatil.Result), uint32(eventDeatil.SlotId))
 		} else if event == InStockConfirm {
-			sqlutils.InStockTerminalDeviceId(eventDeatil.DeviceId, uint32(eventDeatil.SlotId), m.TerminalId)
+			//sqlutils.InStockTerminalDeviceId(eventDeatil.DeviceId, uint32(eventDeatil.SlotId), m.TerminalId)
 			go callback.InStockCallBack(eventDeatil.ActionId, m.TerminalId, eventDeatil.DeviceId,
 				uint32(eventDeatil.Result), uint32(eventDeatil.SlotId))
 		}
