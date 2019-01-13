@@ -24,6 +24,9 @@ const(
 	LinkReadTimeOut = 2
 	LinkWriteTimeOut = 3
 	LinkReset = 4 // restart server
+
+	SeqTimeout = 15
+	TimeoutErrCode = 9
 )
 
 type SafeTerminalMap struct {
@@ -175,6 +178,22 @@ func (t *Terminal) write_loop() {
 	}
 }
 
+func CheckStockMessageTimeout(terminalId, actionId, seq, slotId uint32, stockType string){
+	time.Sleep(time.Second * SeqTimeout)
+	p := sqlutils.CheckPackageBySeqResponse(seq, terminalId, actionId)
+	if p != nil {
+		log.Info("CheckStockMessageTimeout package exist", terminalId, actionId, seq, slotId, stockType)
+		return
+	}
+	log.Warn("CheckStockMessageTimeout", terminalId, actionId, seq, slotId, stockType)
+	if stockType == "outstock" {
+		callback.OutStockCallBack(actionId, terminalId, 0, TimeoutErrCode, slotId)
+	}else if stockType == "instock" {
+		callback.InStockCallBack(actionId, terminalId, 0, TimeoutErrCode, slotId)
+	}
+
+}
+
 func (t *Terminal) SendOutStockMessage(actionId, terminalId uint32, slotId byte) int64{
 	seq := redisutils.SequenceGen()
 	if seq == 0 {
@@ -196,6 +215,7 @@ func (t *Terminal) SendOutStockMessage(actionId, terminalId uint32, slotId byte)
 	m.InsertMessage(eventDetail, _msg)
 	t.inbox <- _msg
 	log.Info("SendOutStockMessage")
+	go CheckStockMessageTimeout(terminalId, actionId, seq, uint32(slotId), "outstock")
 	return 0
 }
 
@@ -220,6 +240,7 @@ func (t *Terminal) SendInStockMessage(actionId, terminalId uint32, slotId byte) 
 	m.InsertMessage(eventDetail, _msg)
 	t.inbox <- _msg
 	log.Info("SendInStockMessage")
+	go CheckStockMessageTimeout(terminalId, actionId, seq, uint32(slotId), "instock")
 	return 0
 }
 
