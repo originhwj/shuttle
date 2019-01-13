@@ -18,6 +18,7 @@ import (
 	"errors"
 	"./config"
 	"./utils/sqlutils"
+	"./utils/redisutils"
 )
 
 var (
@@ -85,6 +86,7 @@ func tcp_server() {
 		}
 		terminal := Terminal{
 			Conn:         conn,
+			ConnectId: 	  redisutils.ConnectionGen(),
 			bw:           bufio.NewWriter(conn),
 			br:           bufio.NewReader(conn),
 			readTimeout:  60 * time.Second,
@@ -219,7 +221,7 @@ func main() {
 
 	// reset all terminal
 	sqlutils.ResetTerminalStatus()
-
+	sqlutils.ResetLinkRecord(LinkReset)
 	go http_server()
 	go func() {
 		log.Println(http.ListenAndServe(":12001", nil)) // pprof

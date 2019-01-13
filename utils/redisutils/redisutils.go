@@ -14,6 +14,7 @@ var (
 	ExpireTs int64 = 24*3600
 
 	SequenceGenKey = "chuansuo:sequence:gen"
+	ConnGenKey = "chuansuo:connection:gen"
 
 )
 
@@ -116,5 +117,19 @@ func SequenceGen() uint32 {
 		log.Error("SequenceGen err", err)
 		return 0
 	}
+	return uint32(res)
+}
+
+func ConnectionGen() uint32 {
+	rp := GetRedisPool()
+	redis_conn := rp.Get()
+	defer redis_conn.Close()
+	reply, err := redis_conn.Do("INCR", ConnGenKey)
+	res, err := redis.Int(reply, err)
+	if err != nil {
+		log.Error("ConnectionGen err", err)
+		return 0
+	}
+	log.Info("connection gen id", res)
 	return uint32(res)
 }
