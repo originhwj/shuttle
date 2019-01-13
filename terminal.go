@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"strings"
 	"sync"
 	"time"
 
@@ -16,6 +17,14 @@ import (
 )
 
 var allTerminal = SafeTerminalMap{t: make(map[uint32]*Terminal)}
+
+const(
+	LinkInitType = 0
+	LinkBrokenType = 1
+	LinkReadTimeOut = 2
+	LinkWriteTimeOut = 3
+	LinkReset = 4 // restart server
+)
 
 type SafeTerminalMap struct {
 	t  map[uint32]*Terminal
@@ -32,8 +41,10 @@ type Terminal struct {
 	writeTimeout time.Duration
 	readTimeout  time.Duration
 	TerminalId   uint32
+	ConnectId    uint32
 	inbox        chan []byte
 	closed       bool
+	unlink       uint32
 }
 
 func (t *Terminal) Process() {
@@ -45,6 +56,9 @@ func (t *Terminal) Process() {
 		_, err := t.Conn.Read(buf)
 		if err != nil {
 			log.Error(err)
+			if strings.Contains(err.Error(), "timeout"){
+				t.unlink = LinkReadTimeOut
+			}
 			return
 		}
 		start := buf[:1]
@@ -93,6 +107,7 @@ func (t *Terminal) Process() {
 						log.Info("add terminal map", t.SelfLog())
 					}
 					allTerminal.mu.Unlock()
+					sqlutils.InsertLinkRecord(terminalId, t.ConnectId) // 建立连接记录入库
 				}
 			}
 			_msg := resMsg.Pack()
@@ -123,6 +138,10 @@ func (t *Terminal) Close() {
 			// 更新心跳表状态
 			sqlutils.UpdateLastHeartbeat(1, t.TerminalId)
 		}
+		if t.unlink == 0 {
+			t.unlink = LinkBrokenType
+		}
+		sqlutils.UpdateLinkRecord(t.TerminalId, t.ConnectId, t.unlink)
 	})
 
 }
@@ -139,13 +158,17 @@ func (t *Terminal) write_loop() {
 			_, err := t.bw.Write(b)
 			if err != nil {
 				log.Error("write err", err)
+				if strings.Contains(err.Error(), "timeout"){
+					t.unlink = LinkWriteTimeOut
+				}
 				return
 			}
 			log.Info("server write finish", b)
 			t.bw.Flush()
 		case <-time.After(60 * time.Second):
 			//超时60秒,没有任何心跳信息 关掉
-			log.Warn("timeout close")
+			log.Warn("timeout close", t.SelfLog())
+			t.unlink = LinkWriteTimeOut
 			return
 		}
 

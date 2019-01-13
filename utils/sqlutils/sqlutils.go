@@ -89,8 +89,10 @@ func UpdateLastHeartbeat(heartbeatErr uint32, terminalId uint32){
 	}
 	_, err := db.Exec(sql, now, heartbeatStatus, terminalId)
 	if err != nil {
-		log.Error("UpdateLastHeartbeat", heartbeatStatus, terminalId)
+		log.Error("UpdateLastHeartbeat err", heartbeatStatus, terminalId)
+		return
 	}
+	log.Info("UpdateLastHeartbeat success", heartbeatStatus, terminalId)
 }
 
 func CheckTerminalExist(terminalId uint32) bool{
@@ -114,4 +116,38 @@ func ResetTerminalStatus() bool{
 	}
 	log.Info("reset LastHeartbeat", now, heartbeatStatus)
 	return true
+}
+
+func InsertLinkRecord(terminalId, connectionId uint32) {
+	sql := "insert into tbl_connection (terminal_id,connection_id,create_time,unlink_time,unlink_type) value (?,?,?,?,?)"
+	now := time.Now().Format(DefDatetimeLayout)
+	_, err := db.Exec(sql, terminalId, connectionId, now, now, 0)
+	if err != nil {
+		log.Error("SaveLinkRecord err", terminalId, connectionId, err)
+		return
+	}
+	log.Info("SaveLinkRecord success", terminalId, connectionId)
+}
+
+func UpdateLinkRecord(terminalId, connectionId, unlink_type uint32) {
+	sql := "update tbl_connection set unlink_type=?, unlink_time=? where connection_id=?"
+	now := time.Now().Format(DefDatetimeLayout)
+	_, err := db.Exec(sql, unlink_type, now, connectionId)
+	if err != nil {
+		log.Error("UpdateLinkRecord err", terminalId, connectionId, unlink_type, err)
+		return
+	}
+	log.Info("UpdateLinkRecord success", terminalId, connectionId, unlink_type)
+}
+
+// 重启服务调用，重置所有连接
+func ResetLinkRecord(unlink_type uint32) {
+	sql := "update tbl_connection set unlink_type=?, unlink_time=? where unlink_type=0"
+	now := time.Now().Format(DefDatetimeLayout)
+	_, err := db.Exec(sql, unlink_type, now)
+	if err != nil {
+		log.Error("ResetLinkRecord err", unlink_type, err)
+		return
+	}
+	log.Info("ResetLinkRecord success", unlink_type)
 }
