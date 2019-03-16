@@ -79,11 +79,12 @@ func GetPackageByTerminalSequence(sequence, terminal_id uint32) []byte{
 	return p
 }
 
+// 不再判断sequence, 根据action id和event来判重
 func CheckPackageBySeqResponse(sequence, terminal_id, action_id uint32) []byte{
-	sql := "select package, terminal_id from tbl_package where sequence=? and terminal_id=? and action_id=? and direction=2 limit 1"
+	sql := "select package, terminal_id from tbl_package where action_id=? and terminal_id=? and event in (2,3) and direction=2 limit 1"
 	var p []byte
 	var terminalId uint32
-	err := db.QueryRow(sql, sequence, terminal_id, action_id).Scan(&p, &terminalId)
+	err := db.QueryRow(sql, action_id, terminal_id).Scan(&p, &terminalId)
 	if err != nil {
 		log.Error("CheckPackageBySeqResponse err", err, sequence)
 		return nil
