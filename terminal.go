@@ -72,6 +72,10 @@ func (t *Terminal) Process() {
 			return
 		}
 		log.Info("read package len", packageLen)
+		if packageLen < 4 {
+			log.Error("packageLen err < 4", packageLen)
+			return 
+		}
 		dataLen := packageLen - 4 + 1
 		data_buf := make([]byte, dataLen)
 		n, err := io.ReadFull(t.br, data_buf) // 把消息包读完
