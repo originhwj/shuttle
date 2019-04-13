@@ -279,15 +279,16 @@ func Parse2Message(data, origin []byte, packageLength uint32) (*Message, int) {
 		// 解析有问题的包,不处理
 		return nil, 0
 	}
-	var isSync bool = false
+	var isSync bool = true
 	if event == Ping{
 		m.InsertHeartBeatMessage(eventDeatil, origin)
 	} else {
 		// 多次从机柜收到的消息,只需恢复即可,可以重复入库,但不更新terminalDevice
-		res := sqlutils.GetPackageByTerminalSequence(m.Sequence, m.TerminalId)
-		if res == nil {
-			isSync = true
-		}
+		// 直接全回调
+		//res := sqlutils.GetPackageByTerminalSequence(m.Sequence, m.TerminalId)
+		//if res == nil {
+		//	isSync = true
+		//}
 		m.InsertMessage(eventDeatil, origin)
 	}
 	if event == OutStock || event == InStock { //出库入库不需要回包
